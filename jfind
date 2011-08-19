@@ -1,0 +1,47 @@
+#!/bin/sh
+
+#########################################
+#   find all java/jsp files
+#   (by default in current dir)
+########################################
+
+MY_NAME=`basename $0`
+
+SEARCH_DIR=$1
+[ -z "$SEARCH_DIR" ] && SEARCH_DIR=.
+
+
+#for ii in $FIND_CMD ; do echo $ii ; done
+
+case $MY_NAME in
+	jfind)
+		find "$SEARCH_DIR" -name '*.java'
+	;;
+	sfind)
+		find "$SEARCH_DIR" -name '*.scala'
+	;;
+	rbfind)
+		find "$SEARCH_DIR" -name '*.rb'
+	;;
+
+	jspfind)
+		find "$SEARCH_DIR" -name '*.jsp' -or -name '*.jhtml' -or -name '*.jwml' \
+			-or -name '*.html'
+	;;
+
+	cfind)
+		find "$SEARCH_DIR" \
+			-name '*.c' -or \
+			-name '*.C' -or \
+			-name '*.cc' -or \
+			-name '*.CC' -or \
+			-name '*.cpp' -or \
+			-name '*.CPP' -or \
+			-name '*.h' -or \
+			-name '*.H'
+	;;
+
+	*)
+		echo error
+		exit 1
+esac

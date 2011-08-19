@@ -1,0 +1,6 @@
+#!/bin/sh
+
+D=
+[ -z "$1" ] && D=.
+
+find $D "$@" -type f | grep -v .svn | grep -v .git | grep -v CVS | grep -v .swp

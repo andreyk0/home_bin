@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+`find . -type f -name '*.class'`.each do |fname|
+  fname.chomp!
+  cname = fname.gsub(/^\./, '').gsub(/\.class$/, '')
+  puts cname
+  system("javap -v #{cname} > #{fname.gsub(/\.class$/, '.asm')}")
+end

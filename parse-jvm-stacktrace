@@ -1,0 +1,141 @@
+#!/usr/bin/env ruby
+# == Summarizes JVM Full stacktrace dump
+#
+# == Usage
+#  tail -f log > stack
+#  kill -QUIT javapid
+#  cat stack | parse-jvm-stacktrace
+#  cat stack | parse-jvm-stacktrace -l | grep gilt
+#
+# --help
+#    show help
+#
+# --long,-l
+#    long lines (for easy grep)
+#
+
+require 'getoptlong'
+require 'rdoc/usage'
+
+@output_long_lines = false
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--long', '-l', GetoptLong::NO_ARGUMENT ]
+)
+opts.each do |opt, arg|
+  case opt
+  when '--help'
+    RDoc::usage
+    exit 0
+  when '--long'
+    @output_long_lines = true
+  end
+end
+
+
+@current_line = ''
+def readline
+  @current_line = STDIN.readline.strip
+end
+
+def find_next(regex)
+  while ( ! regex.match(@current_line) ) do
+    readline
+  end
+  @current_line
+end
+
+def read_until(regex)
+  lines_acc = []
+  while ( ! regex.match(@current_line) ) do
+    lines_acc << @current_line
+    readline
+  end
+  lines_acc
+end
+
+def thread_dump_begin
+  find_next(/^Full thread dump Java/)
+end
+
+def read_thread_header
+  find_next(/^"/)
+end
+
+def read_thread_state
+  state = find_next(/^java\.lang\.Thread\.State:/)
+  readline
+  state.gsub(/^[^:]+/,'')
+end
+
+def read_stack_trace
+  read_until(/^$/)
+end
+
+def filter_stack_trace(trace_lines)
+  trace_lines = trace_lines.grep(/^at /)
+  trace_lines = trace_lines.map { |l| l.gsub(/^at /,'') }
+  summary = []
+  summary << trace_lines.shift
+  summary << trace_lines.shift
+  summary << trace_lines.shift
+
+  gilt_lines = trace_lines.grep(/(jsp)|(\.gilt\.)|(jsp)/)
+
+  summary << ['...']
+
+  if (gilt_lines.empty?) then
+  else
+    summary << gilt_lines.slice(0,3)
+  end
+  summary << trace_lines.slice(-3, 3)
+  summary
+end
+
+def format_stack_trace(trace_lines)
+  if (@output_long_lines) then
+    trace_lines.join(' - ')
+  else
+    trace_lines.join("\n\t - ")
+  end
+end
+
+
+@state_counters = Hash.new(0)
+@stack_trace_counters = Hash.new(0)
+
+def parse_stack_trace
+  header = read_thread_header
+  state = read_thread_state
+  trace = read_stack_trace
+
+  trace_summary = format_stack_trace(filter_stack_trace(trace))
+
+  @state_counters[state] += 1
+  @stack_trace_counters[trace_summary] += 1
+
+  #puts "H: #{header}"
+  #puts "S: #{state}"
+  #puts "T: #{trace.join(":::")}"
+end
+
+###################
+
+thread_dump_begin
+
+begin
+  while(true) do
+    parse_stack_trace
+  end
+rescue EOFError
+end
+
+
+@state_counters.sort_by { |s,c| c.to_i }.each do |state, count|
+  puts "#{count}\t#{state}"
+end
+
+@stack_trace_counters.sort_by { |s,c| c.to_i }.each do |trace, count|
+  puts "#{count}\t#{trace}"
+end

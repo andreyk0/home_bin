@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+require 'ftools'
+
+
+def printUsageAndExit(errcode)
+	STDERR.puts "Usage: #{$0} files to move to Trash"
+	STDERR.puts "       TRASHDIR env var is required"
+	exit(errcode)
+end
+
+TRASHDIR = ENV['TRASHDIR']
+
+printUsageAndExit 1 unless ( TRASHDIR != nil and File.stat(TRASHDIR).directory? )
+printUsageAndExit 2 unless ARGV.size > 0
+
+now = Time.now
+todaysTrashDir = TRASHDIR + '/' + now.strftime("%Y%m%d_") + now.to_i.to_s
+
+ARGV.each { |file|
+	fileTrashDir = (todaysTrashDir +
+	                File.expand_path(File.dirname(file))).gsub(/\/\.$/, '')
+	File.mkpath(fileTrashDir) unless File.exists?(fileTrashDir)
+    puts file + " -> " + fileTrashDir
+	if not system('mv', file, fileTrashDir)
+		exit 1
+	end
+}

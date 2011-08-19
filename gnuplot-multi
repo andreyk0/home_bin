@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+DAT_FILES=ARGV
+
+plot_cmds = DAT_FILES.map do |dat_file|
+  "'#{dat_file}' using 1:2 with lines title '#{dat_file.gsub(/\..*$/,'')}'"
+end
+
+IO.popen("gnuplot", "w") do |gp|
+  gp.print("plot ")
+  gp.puts(plot_cmds.join(', '))
+end
