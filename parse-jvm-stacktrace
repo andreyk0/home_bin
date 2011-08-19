@@ -74,23 +74,27 @@ def read_stack_trace
 end
 
 def filter_stack_trace(trace_lines)
-  trace_lines = trace_lines.grep(/^at /)
+  trace_lines = trace_lines.find_all{ |l| /^at /.match(l) }
   trace_lines = trace_lines.map { |l| l.gsub(/^at /,'') }
+  trace_lines = trace_lines.reject { |l| /^\s*$/.match(l) }
+
   summary = []
   summary << trace_lines.shift
   summary << trace_lines.shift
   summary << trace_lines.shift
 
-  gilt_lines = trace_lines.grep(/(jsp)|(\.gilt\.)|(jsp)/)
+  gilt_lines = trace_lines.find_all{ |l| /(\.gilt\.)|(_jsp)/.match(l) }
 
-  summary << ['...']
-
-  if (gilt_lines.empty?) then
-  else
-    summary << gilt_lines.slice(0,3)
+  if (!gilt_lines.empty?) then
+    summary << ['...']
+    summary << gilt_lines
   end
-  summary << trace_lines.slice(-3, 3)
-  summary
+  if (!trace_lines.empty?) then
+    summary << ['...']
+    summary << trace_lines.slice(-3, 3)
+  end
+
+  summary.reject { |l| l.nil? }
 end
 
 def format_stack_trace(trace_lines)
