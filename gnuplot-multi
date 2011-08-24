@@ -1,12 +1,87 @@
 #!/usr/bin/env ruby
+# == Plots multiple data files on the same graph using gnuplot
+#
+# == Usage
+#   gnuplot-multi --show --xlabel 'xx' --ylabel 'yy' --columns '1:3' data1.dat data2.dat data3.dat
+#   gnuplot-multi --output foo.pdf  --xlabel 'xx' --ylabel 'yy' --columns '1:3' data1.dat data2.dat data3.dat
+#
+# == Data file format
+# #colum1\tcolumn2\tcolumn3
+# 1 2 3
+# 2 3 4
+#
+# --help
+#    show help
+#
+# --show,-s
+#   show only, don't write to pdf
+#
+# --output,-o
+#   outfile.pdf
+#
+# --columns
+#   1-based column indexes for x:y axis from the data file
+#   column1:column2
+#
+# --xlabel
+#   X label on the graph
+#
+# --ylabel
+#   Y label on the graph
+#
+
+require 'getoptlong'
+require 'rdoc/usage'
+
+@show_only = false
+@out_file = 'dataplot.pdf'
+@data_columns = '1:2'
+@xlabel = 'x'
+@ylabel = 'y'
+
+opts = GetoptLong.new(
+  [ '--help',    '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--show',    '-s', GetoptLong::NO_ARGUMENT ],
+  [ '--output',  '-o', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--columns', '-c', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--xlabel',  '-x', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--ylabel',  '-y', GetoptLong::REQUIRED_ARGUMENT ]
+)
+opts.each do |opt, arg|
+  case opt
+  when '--help'
+    RDoc::usage
+    exit 0
+  when '--show'
+    @show_only = true
+  when '--output'
+    @out_file = arg
+  when '--columns'
+    @data_columns = arg
+  when '--xlabel'
+    @xlabel = arg
+  when '--ylabel'
+    @ylabel = arg
+  end
+end
 
 DAT_FILES=ARGV
 
-plot_cmds = DAT_FILES.map do |dat_file|
-  "'#{dat_file}' using 1:2 with lines title '#{dat_file.gsub(/\..*$/,'')}'"
+def plot_cmds
+  DAT_FILES.map do |dat_file|
+    title = dat_file.gsub(/\..*$/,'').gsub(/^.*\//,'')
+    "'#{dat_file}' using #{@data_columns} with lines title '#{title}'"
+  end
 end
 
 IO.popen("gnuplot", "w") do |gp|
+  if (!@show_only) then
+    gp.puts('set terminal pdf')
+    gp.puts("set output \"#{@out_file}\"")
+  end
+  gp.puts("set xlabel \"#{@xlabel}\"")
+  gp.puts("set ylabel \"#{@ylabel}\"")
+
   gp.print("plot ")
   gp.puts(plot_cmds.join(', '))
 end
