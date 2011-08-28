@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ -f $1 ] ; then
+    cat /dev/null > $1
+else
+    echo Not a file: $1
+    exit 1
+fi

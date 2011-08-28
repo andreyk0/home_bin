@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+#
+#  Input format:
+#    - one command per line
+#    - arguments are tab-separated (to avoid recreating shell '" escape rules)
+#    - e.g.:
+#      /bin/ls\t-l\t/tmp
+#
+#
+
+NUM_CHILDREN=ARGV[0].to_i;
+
+raise "Usage: #{$0} num_children" if NUM_CHILDREN < 1 
+
+STDOUT.reopen("forker.#{Process.pid}.out", 'a')
+STDERR.reopen("forker.#{Process.pid}.err", 'a')
+CMDERRS = File.open("forker.#{Process.pid}.failures", 'a')
+
+TABS=/\t/
+
+@pid2cmd = {}
+
+def waitChild()
+	pid,exitStatus = Process.wait2()
+	if exitStatus.exitstatus != 0
+		CMDERRS.puts "#{exitStatus.exitstatus}:#{@pid2cmd[pid]}"
+	end
+	@pid2cmd.delete(pid)
+end
+
+STDIN.each do |cmd|
+    cmd = cmd.chomp!
+
+    if @pid2cmd.size >= NUM_CHILDREN
+		waitChild()
+    end
+
+    pid = Process.fork
+
+    if pid.nil?
+        # child
+        exec(*cmd.split(TABS))
+    else
+        # parent
+        @pid2cmd[pid] = cmd
+    end
+end
+
+
+while @pid2cmd.size > 0 do
+	waitChild()
+end
+
+CMDERRS.close
