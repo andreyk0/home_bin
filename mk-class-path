@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+CP=[
+  Dir.glob('lib/*.jar'),
+  Dir.glob('lib/default/*.jar'),
+  Dir.glob('lib/test/*.jar'),
+  'target/classes',
+  'target/test_classes',
+  '.'
+].flatten.join(':')
+
+puts CP
