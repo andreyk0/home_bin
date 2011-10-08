@@ -4,8 +4,10 @@ CP=[
   Dir.glob('lib/*.jar'),
   Dir.glob('lib/default/*.jar'),
   Dir.glob('lib/test/*.jar'),
+  Dir.glob('build/java/lib/*.jar'),
   'target/classes',
   'target/test_classes',
+  'target/tests',
   '.'
 ].flatten.join(':')
 
