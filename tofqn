@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+raise "Usage: #{$0} /path/to/foo.java /path/to/foo.scala" if ARGV.empty?
+
+ARGV.each do |fname|
+  fqn = fname.gsub(/^.*\/((com)|(org))/, "\\1")
+  fqn = fqn.gsub(/\.java$/, "")
+  fqn = fqn.gsub(/\.scala$/, "")
+  fqn = fqn.gsub(/\//, ".")
+  puts fqn
+end

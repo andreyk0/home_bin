@@ -1,0 +1,2 @@
+#!/bin/sh
+ant -Dtestng.jvmarg.line=`tofqn $1` test
