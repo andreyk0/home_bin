@@ -1,0 +1,4 @@
+#!/bin/sh
+
+find . -type f -name '*.java' -o -name '*.scala' > cscope.files
+cscope -b
