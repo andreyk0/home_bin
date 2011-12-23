@@ -1,0 +1,9 @@
+#!/usr/bin/ruby
+
+#
+# stupid hack to normalize yml for diffing
+#
+require 'yaml'
+y = YAML::load_file(ARGV[0])
+y = y[ARGV[1]] unless ARGV[1].nil?
+puts YAML::dump(y)
