@@ -7,5 +7,5 @@ keysym Control_L = Super_L
 keysym Super_L = Control_L
 add control = Control_L
 add mod4 = Super_L
-keysym F1 = F11
 _E_
+#keysym F1 = F11
