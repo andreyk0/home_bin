@@ -1,2 +1,6 @@
 #!/bin/sh
-exec xsel --clipboard --output
+if [ `uname -s` == 'Darwin' ] ; then
+  exec /usr/bin/pbpaste "$@"
+else
+  exec xsel --clipboard --output
+fi

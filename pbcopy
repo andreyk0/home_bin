@@ -1,2 +1,6 @@
 #!/bin/sh
-exec xsel --clipboard --input
+if [ `uname -s` == 'Darwin' ] ; then
+  exec /usr/bin/pbcopy "$@"
+else
+  exec xsel --clipboard --input "$@"
+fi
