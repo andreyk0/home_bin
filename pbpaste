@@ -1,5 +1,5 @@
-#!/bin/sh
-if [ `uname -s` == 'Darwin' ] ; then
+#!/bin/bash
+if [[ `uname -s` == 'Darwin' ]] ; then
   exec /usr/bin/pbpaste "$@"
 else
   exec xsel --clipboard --output
