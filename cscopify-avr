@@ -1,0 +1,10 @@
+#!/bin/sh
+
+find . \
+  /usr/lib/avr/include \
+  /opt/arduino/libraries \
+  /opt/arduino/hardware/arduino \
+  -type f \
+  > cscope.files
+
+cscope -b
