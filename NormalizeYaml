@@ -21,6 +21,21 @@ class Hash
 end
 
 
+
+# quick hack to allow arrays to be flattened
+class Array
+	def to_yaml( opts = {} )
+		YAML::quick_emit( self, opts ) do |out|
+            out.seq( taguri, to_yaml_style ) do |seq|
+                flatten.each do |x| # <<<< hack
+                    seq.add( x )
+                end
+            end
+        end
+	end
+end
+
+
 y = YAML::load_file(ARGV[0])
 y = y[ARGV[1]] unless ARGV[1].nil?
 puts y.to_yaml
