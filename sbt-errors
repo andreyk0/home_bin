@@ -24,7 +24,7 @@ if (ENV['SBT_ERRORS_RUNNING'].nil?) then
   $stdout.flush
 
   if (!File.exists?(FIFO)) then
-    system('mkfifo /tmp/sbt.fifo')
+    system("mkfifo #{FIFO}")
   end
 
   pTee = fork do
