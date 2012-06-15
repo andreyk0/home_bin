@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+#
+# prints sbt out and collects incremental build errs in a file
+#
+
+$recent_errors = []
+
+def write_recent_errors
+  File.open('/tmp/sbt.errs', 'w') do |f|
+    $recent_errors.each do |line|
+      f.puts(line)
+    end
+  end
+end
+
+$stdin.each_line do |line|
+  puts line
+  line = line.gsub(/\x1b\[([0-9]+;)?[0-9]+m/, '') # strip out ascii colors
+
+  if (/Waiting for source changes/.match(line)) then
+    write_recent_errors
+    $recent_errors = []
+  elsif (/\[error\]/.match(line)) then
+    $recent_errors << line
+  end
+end
