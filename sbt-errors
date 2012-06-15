@@ -43,7 +43,9 @@ File.open(FIFO, 'r') do |input|
     if (/Waiting for source changes/.match(line)) then
       write_recent_errors
       $recent_errors = []
-    elsif (/\[error\]/.match(line)) then
+    elsif (
+      /\[error\]/.match(line) && # compiler errs
+      (! /warning: \[deprecation\]/.match(line))) then # java warnings show up prepended with [error] in sbt
       $recent_errors << line
     end
   end
