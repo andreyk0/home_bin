@@ -23,7 +23,9 @@ case $MY_NAME in
 	rbfind)
 		find "$SEARCH_DIR" -name '*.rb'
 	;;
-
+	hsfind)
+		find "$SEARCH_DIR" -name '*.hs'
+	;;
 	jspfind)
 		find "$SEARCH_DIR" -name '*.jsp' -or -name '*.jhtml' -or -name '*.jwml' \
 			-or -name '*.html'
