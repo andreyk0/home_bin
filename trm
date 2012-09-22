@@ -1,5 +1,13 @@
 #!/usr/bin/env ruby
 
+#
+# Ubuntu has a utility that interacts with Trash
+#
+TPUT='/usr/bin/trash-put'
+if File.exists?(TPUT)
+  exec(TPUT, *ARGV)
+end
+
 require 'ftools'
 
 
