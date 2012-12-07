@@ -8,7 +8,7 @@ if File.exists?(TPUT)
   exec(TPUT, *ARGV)
 end
 
-require 'ftools'
+require 'fileutils'
 
 
 def printUsageAndExit(errcode)
@@ -28,7 +28,7 @@ todaysTrashDir = TRASHDIR + '/' + now.strftime("%Y%m%d_") + now.to_i.to_s
 ARGV.each { |file|
 	fileTrashDir = (todaysTrashDir +
 	                File.expand_path(File.dirname(file))).gsub(/\/\.$/, '')
-	File.mkpath(fileTrashDir) unless File.exists?(fileTrashDir)
+	FileUtils.mkdir_p(fileTrashDir) unless File.exists?(fileTrashDir)
     puts file + " -> " + fileTrashDir
 	if not system('mv', file, fileTrashDir)
 		exit 1
