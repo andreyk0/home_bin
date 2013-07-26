@@ -8,7 +8,7 @@ HSFILES:=$(shell find $(SRC) -type f -name '*.hs')
 
 GHC:=ghc -Wall -O2
 
-CABAL_DEPS:=aeson aeson-pretty hoogle shqq
+CABAL_DEPS:=aeson aeson-pretty hoogle shqq missingh
 
 .PHONY: deps tools
 
