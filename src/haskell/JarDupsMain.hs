@@ -8,6 +8,7 @@ module Main (
 ) where
 
 import Control.Applicative
+import Control.Concurrent
 import Data.Aeson
 import Data.Aeson.Encode.Pretty
 import Data.List
@@ -78,17 +79,23 @@ readAllJars opts = do
   let libDirName = libDir opts
   jarFiles <- filter (endswith ".jar") <$> getDirectoryContents libDirName
   let fullJarPaths = fmap ((libDirName ++ "/") ++) $ jarFiles
-  concat <$> mapM (readJar opts) fullJarPaths
+  jarContentsMvars <- mapM (readJar opts) fullJarPaths
+  concat <$> (mapM (takeMVar) jarContentsMvars)
 
 
-readJar:: JarDupsOpts -> FilePath -> IO [(ClassName, FilePath)]
+readJar:: JarDupsOpts -> FilePath -> IO (MVar [(ClassName, FilePath)])
 readJar opts jarFname = do
-  if (verbose opts)
-    then putStrLn $ "Reading " ++ (show jarFname) ++ " ..."
-    else return ()
+	resMvar <- newEmptyMVar
 
-  jBytes <- L.readFile jarFname
-  let arch = Z.toArchive jBytes
-  let jarContents = Z.filesInArchive arch
-  let cNames = filter (endswith ".class") jarContents
-  return $ zip cNames $ repeat jarFname
+	_ <- forkIO $ do
+		if (verbose opts)
+			then putStrLn $ "Reading " ++ (show jarFname) ++ " ..."
+			else return ()
+
+		jBytes <- L.readFile jarFname
+		let arch = Z.toArchive jBytes
+		let jarContents = Z.filesInArchive arch
+		let cNames = filter (endswith ".class") jarContents
+		putMVar resMvar $ zip cNames $ repeat jarFname
+
+	return resMvar
