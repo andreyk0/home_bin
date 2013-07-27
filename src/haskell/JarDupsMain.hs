@@ -14,8 +14,9 @@ import Data.List
 import Data.String.Utils
 import System.Console.CmdArgs
 import System.Directory
-import System.ShQQ
 
+import qualified Codec.Archive.Zip as Z
+import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -86,6 +87,8 @@ readJar opts jarFname = do
     then putStrLn $ "Reading " ++ (show jarFname) ++ " ..."
     else return ()
 
-  jarContents <- lines <$> [sh| jar -tf $jarFname 2>/dev/null |] -- suppress Picked up _JAVA_OPTIONS: -Djava.awt.headless=true on the mac
+  jBytes <- L.readFile jarFname
+  let arch = Z.toArchive jBytes
+  let jarContents = Z.filesInArchive arch
   let cNames = filter (endswith ".class") jarContents
   return $ zip cNames $ repeat jarFname
