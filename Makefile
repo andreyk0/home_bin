@@ -8,7 +8,7 @@ HSFILES:=$(shell find $(SRC) -type f -name '*.hs')
 
 GHC_PROF:=-prof -fprof-auto
 
-GHC:=ghc -Wall -O2
+GHC:=ghc -i$(SRC) -Wall -O2
 
 CABAL_DEPS:=aeson aeson-pretty filemanip hoogle shqq missingh vtk-ui zip-archive
 

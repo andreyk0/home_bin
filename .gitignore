@@ -1,6 +1,6 @@
 *.o
 *.hi
 
-ifind
-jar-dups
-pretty-json
+/ifind
+/jar-dups
+/pretty-json
