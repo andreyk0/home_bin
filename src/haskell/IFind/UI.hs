@@ -104,7 +104,9 @@ newSearchApp opts = do
 updateSearchResults:: SearchApp -> IO ()
 updateSearchResults sApp = do
   clearList $ searchResultsWidget sApp
-  searchTxt <- T.unpack <$> (getEditText $ editSearchWidget sApp)
+  searchEditTxt <- T.unpack <$> (getEditText $ editSearchWidget sApp)
+  let searchTxt = if null searchEditTxt then "." else searchEditTxt
+
   allFilePaths' <- readIORef . allFilePaths $ sApp
 
   matchingFilePathsEth <- Control.Exception.try $ do

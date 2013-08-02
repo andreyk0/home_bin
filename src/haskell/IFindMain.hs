@@ -10,7 +10,7 @@ iFindOpts :: IFindOpts
 iFindOpts =
   IFindOpts { inDir = "."             &= help "directory to search recursively"
             , outFile = Nothing       &= help "output file name"
-            , searchRe = "."          &= help "initial value of search regex"
+            , searchRe = ""           &= help "initial value of search regex"
             , noDefaultConfig = False &= help "ignore default config settings"
             } &=
               program "ifind" &=
