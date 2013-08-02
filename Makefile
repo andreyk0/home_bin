@@ -11,7 +11,7 @@ GHC_PROF:=-prof -fprof-auto
 
 GHC:=ghc -i$(SRC) -Wall -O2
 
-CABAL_DEPS:=aeson aeson-pretty filemanip hoogle shqq missingh vtk-ui zip-archive
+CABAL_DEPS:=aeson aeson-pretty filemanip hoogle shqq missingh vty-ui zip-archive
 
 .PHONY: deps tools
 
