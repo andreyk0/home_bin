@@ -6,6 +6,7 @@ SRC:=src/haskell
 
 HSFILES:=$(shell find $(SRC) -type f -name '*.hs')
 
+# http://www.haskell.org/ghc/docs/7.6.2/html/users_guide/template-haskell.html
 GHC_PROF:=-prof -fprof-auto
 
 GHC:=ghc -i$(SRC) -Wall -O2

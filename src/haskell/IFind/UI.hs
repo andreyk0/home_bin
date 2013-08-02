@@ -115,6 +115,9 @@ updateSearchResults sApp = do
     _ <- evaluate $ take 1 matchingFps -- force regex eval and exception
     return matchingFps
 
+  -- height of the screen, don't need to add to list more results than this
+  maxHeight <- fromIntegral <$> region_height  <$> (terminal_handle >>= display_bounds)
+
   case matchingFilePathsEth of
     Left (SomeException e) -> do
       writeIORef (matchingFilePaths sApp) []
@@ -123,8 +126,8 @@ updateSearchResults sApp = do
       writeIORef (matchingFilePaths sApp) fps
       _ <- mapM_ (\fp -> do
                    fpw <- plainText fp
-                   addToList (searchResultsWidget sApp) fp fpw) $ fmap (T.pack) fps
-      numResults <- (getListSize . searchResultsWidget) sApp
+                   addToList (searchResultsWidget sApp) fp fpw) $ fmap (T.pack) $ take maxHeight fps
+      let numResults = length fps
       setText (footerWidget sApp) $ T.pack $ "#> [" ++ (show numResults) ++ "]"
 
 
