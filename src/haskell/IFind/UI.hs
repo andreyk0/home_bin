@@ -10,6 +10,7 @@ import Data.IORef
 import Graphics.Vty hiding (pad)
 import Graphics.Vty.Widgets.All
 import System.Exit (exitSuccess)
+import Text.Printf
 import Text.Regex.Posix ((=~))
 
 import qualified Data.Text as T
@@ -21,15 +22,15 @@ import IFind.Opts
 -- This type isn't pretty, but we have to specify the type of the
 -- complete interface.  Initially you can let the compiler tell you
 -- what it is.
-type T = Box (Box (Box FormattedText (VFixed Edit)) (List T.Text FormattedText))
-             (VFixed FormattedText)
+type T = (Box (Box (HFixed FormattedText) (VFixed Edit))
+              (List T.Text FormattedText))
 
 data SearchApp =
   SearchApp {  -- widgets
                 uiWidget :: Widget T
+              , statusWidget :: Widget FormattedText
               , editSearchWidget :: Widget Edit
               , searchResultsWidget :: Widget (List T.Text FormattedText)
-              , footerWidget :: Widget FormattedText
               , activateHandlers :: Handlers SearchApp
               -- search state
               , matchingFilePaths:: IORef [FilePath]
@@ -56,25 +57,23 @@ newSearchApp :: IFindOpts -> IO (SearchApp, Widget FocusGroup)
 newSearchApp opts = do
   editSearchWidget' <- editWidget
   searchResultsWidget' <- newTextList def_attr []
-  footerWidget' <- plainText "-->"
+  statusWidget' <- plainText "*>"
   activateHandlers' <- newHandlers
 
   _ <- setEditText editSearchWidget' $ T.pack (searchRe opts)
 
-  uiWidget'  <- ((plainText "Search: ") <++> (vFixed 1 editSearchWidget'))
+  uiWidget'  <- ((hFixed 8  statusWidget') <++> (vFixed 1 editSearchWidget'))
              <-->
              (return searchResultsWidget')
-             <-->
-             (vFixed 1 footerWidget')
 
   allFilePaths' <- findAllFilePaths opts
   allFilePathsRef <- newIORef allFilePaths'
   matchingFilePathsRef <- newIORef allFilePaths'
 
   let sApp = SearchApp { uiWidget = uiWidget'
+                       , statusWidget = statusWidget'
                        , editSearchWidget = editSearchWidget'
                        , searchResultsWidget = searchResultsWidget'
-                       , footerWidget = footerWidget'
                        , activateHandlers = activateHandlers'
                        , matchingFilePaths = matchingFilePathsRef
                        , allFilePaths = allFilePathsRef
@@ -105,7 +104,6 @@ updateSearchResults:: SearchApp -> IO ()
 updateSearchResults sApp = do
   clearList $ searchResultsWidget sApp
   searchEditTxt <- getEditText $ editSearchWidget sApp
-
   allFilePaths' <- readIORef . allFilePaths $ sApp
 
   matchingFilePathsEth <- Control.Exception.try $ do
@@ -119,14 +117,25 @@ updateSearchResults sApp = do
   case matchingFilePathsEth of
     Left (SomeException e) -> do
       writeIORef (matchingFilePaths sApp) []
-      setText (footerWidget sApp) (T.pack . show $ e)
+      let errorTxt = T.pack . show $ e
+      errorTxtWidget <- plainText errorTxt
+      addToList (searchResultsWidget sApp) errorTxt errorTxtWidget
     Right fps -> do
       writeIORef (matchingFilePaths sApp) fps
-      _ <- mapM_ (\fp -> do
-                   fpw <- plainText fp
-                   addToList (searchResultsWidget sApp) fp fpw) $ fmap (T.pack) $ take maxHeight fps
-      let numResults = length fps
-      setText (footerWidget sApp) $ T.pack $ "#> [" ++ (show numResults) ++ "]"
+      mapM_ (\fp -> do
+              fpw <- plainText fp
+              addToList (searchResultsWidget sApp) fp fpw) $ fmap (T.pack) $ take maxHeight fps
+
+  updateStatusText sApp
+
+
+updateStatusText:: SearchApp -> IO ()
+updateStatusText sApp = do
+  numRsults <- length <$> readIORef (matchingFilePaths sApp)
+  searchEditTxt <- getEditText $ editSearchWidget sApp
+  if T.null searchEditTxt
+    then setText (statusWidget sApp) $ T.pack $ "Search: "
+    else setText (statusWidget sApp) $ T.pack $ printf "[%5d] " numRsults
 
 
 -- | searchTxt can be of the form "foo!bar!baz",
