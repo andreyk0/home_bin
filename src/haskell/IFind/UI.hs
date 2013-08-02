@@ -104,14 +104,12 @@ newSearchApp opts = do
 updateSearchResults:: SearchApp -> IO ()
 updateSearchResults sApp = do
   clearList $ searchResultsWidget sApp
-  searchEditTxt <- T.unpack <$> (getEditText $ editSearchWidget sApp)
-  let searchTxt = if null searchEditTxt then "." else searchEditTxt
+  searchEditTxt <- getEditText $ editSearchWidget sApp
 
   allFilePaths' <- readIORef . allFilePaths $ sApp
 
   matchingFilePathsEth <- Control.Exception.try $ do
-    let filterPredicate = (flip (=~)) searchTxt
-    let matchingFps = filter (filterPredicate) allFilePaths'
+    let matchingFps = filter (searchTxtToFilterPredicate searchEditTxt) allFilePaths'
     _ <- evaluate $ take 1 matchingFps -- force regex eval and exception
     return matchingFps
 
@@ -130,4 +128,21 @@ updateSearchResults sApp = do
       let numResults = length fps
       setText (footerWidget sApp) $ T.pack $ "#> [" ++ (show numResults) ++ "]"
 
+
+-- | searchTxt can be of the form "foo!bar!baz",
+--   this behaves similar to 'grep foo | grep -v bar | grep -v baz'
+searchTxtToFilterPredicate:: T.Text -> (FilePath -> Bool)
+searchTxtToFilterPredicate searchEditTxt =
+  (\fp -> (filterIncludePredicate fp) &&
+          (not . filterExcludePredicate $ fp))
+  where
+    searchTxt = if T.null searchEditTxt then "." else searchEditTxt
+
+    searchInclude:searchExclude = T.splitOn "!" searchTxt
+
+    txtToFilterPredicate reStr x = x =~ (T.unpack reStr)
+    matchAnyOfPredicate reStrs x = or $ map (\p -> p x) $ map (txtToFilterPredicate) reStrs
+
+    filterIncludePredicate = txtToFilterPredicate searchInclude
+    filterExcludePredicate = matchAnyOfPredicate searchExclude
 
