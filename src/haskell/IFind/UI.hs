@@ -5,18 +5,23 @@ module IFind.UI (
 ) where
 
 import Control.Applicative
-import Control.Exception
+import Control.DeepSeq
+import Data.Either
 import Data.IORef
 import Graphics.Vty hiding (pad)
 import Graphics.Vty.Widgets.All
 import System.Exit (exitSuccess)
 import Text.Printf
-import Text.Regex.Posix ((=~))
+
+import qualified Text.Regex.TDFA as RT
+import qualified Text.Regex.TDFA.String as RS
 
 import qualified Data.Text as T
 
 import IFind.FS
 import IFind.Opts
+import Util.List
+import Util.Regex
 
 
 -- This type isn't pretty, but we have to specify the type of the
@@ -34,7 +39,7 @@ data SearchApp =
               , activateHandlers :: Handlers SearchApp
               -- search state
               , matchingFilePaths:: IORef [FilePath]
-              , allFilePaths:: IORef [FilePath]
+              , allFilePaths:: [FilePath]
               }
 
 
@@ -67,7 +72,6 @@ newSearchApp opts = do
              (return searchResultsWidget')
 
   allFilePaths' <- findAllFilePaths opts
-  allFilePathsRef <- newIORef allFilePaths'
   matchingFilePathsRef <- newIORef allFilePaths'
 
   let sApp = SearchApp { uiWidget = uiWidget'
@@ -76,7 +80,7 @@ newSearchApp opts = do
                        , searchResultsWidget = searchResultsWidget'
                        , activateHandlers = activateHandlers'
                        , matchingFilePaths = matchingFilePathsRef
-                       , allFilePaths = allFilePathsRef
+                       , allFilePaths = allFilePaths'
                        }
 
   _ <- updateSearchResults sApp
@@ -104,54 +108,56 @@ updateSearchResults:: SearchApp -> IO ()
 updateSearchResults sApp = do
   clearList $ searchResultsWidget sApp
   searchEditTxt <- getEditText $ editSearchWidget sApp
-  allFilePaths' <- readIORef . allFilePaths $ sApp
 
-  matchingFilePathsEth <- Control.Exception.try $ do
-    let matchingFps = filter (searchTxtToFilterPredicate searchEditTxt) allFilePaths'
-    _ <- evaluate $ take 1 matchingFps -- force regex eval and exception
-    return matchingFps
-
-  -- height of the screen, don't need to add to list more results than this
-  maxHeight <- fromIntegral <$> region_height  <$> (terminal_handle >>= display_bounds)
-
-  case matchingFilePathsEth of
-    Left (SomeException e) -> do
+  case () `deepseq` searchTxtToFilterPredicate searchEditTxt of
+    Left es -> do
       writeIORef (matchingFilePaths sApp) []
-      let errorTxt = T.pack . show $ e
-      errorTxtWidget <- plainText errorTxt
-      addToList (searchResultsWidget sApp) errorTxt errorTxtWidget
-    Right fps -> do
-      writeIORef (matchingFilePaths sApp) fps
-      mapM_ (\fp -> do
-              fpw <- plainText fp
-              addToList (searchResultsWidget sApp) fp fpw) $ fmap (T.pack) $ take maxHeight fps
+      addToResultsList sApp es
+
+    Right filterPredicate -> do
+      let matchingFps = filter (filterPredicate) $ allFilePaths sApp
+
+      -- height of the screen, don't need to add to list more results than this
+      maxHeight <- fromIntegral <$> region_height  <$> (terminal_handle >>= display_bounds)
+
+      writeIORef (matchingFilePaths sApp) matchingFps
+      addToResultsList sApp $ take maxHeight matchingFps
 
   updateStatusText sApp
 
 
+addToResultsList:: SearchApp -> [String] -> IO ()
+addToResultsList sApp xs =
+  mapM_ (\x -> do
+          xw <- plainText x
+          addToList (searchResultsWidget sApp) x xw) $ fmap (T.pack) xs
+
+
 updateStatusText:: SearchApp -> IO ()
 updateStatusText sApp = do
-  numRsults <- length <$> readIORef (matchingFilePaths sApp)
+  matchingFps <- readIORef (matchingFilePaths sApp)
+  let numResults = length matchingFps
   searchEditTxt <- getEditText $ editSearchWidget sApp
   if T.null searchEditTxt
     then setText (statusWidget sApp) $ T.pack $ "Search: "
-    else setText (statusWidget sApp) $ T.pack $ printf "[%5d] " numRsults
+    else setText (statusWidget sApp) $ T.pack $ printf "[%5d] " numResults
 
 
 -- | searchTxt can be of the form "foo!bar!baz",
 --   this behaves similar to 'grep foo | grep -v bar | grep -v baz'
-searchTxtToFilterPredicate:: T.Text -> (FilePath -> Bool)
+--   Return either Left regex compilation errors or Right file path testing predicate
+searchTxtToFilterPredicate:: T.Text -> Either [String] (FilePath -> Bool)
 searchTxtToFilterPredicate searchEditTxt =
-  (\fp -> (filterIncludePredicate fp) &&
-          (not . filterExcludePredicate $ fp))
+  case partitionEithers compileRes of
+    ([], (includeRe:excludeRes)) -> Right $ \fp -> (matchRe includeRe fp) &&
+                                                   (not . anyOf (fmap (matchRe) excludeRes) $ fp)
+    (errs, _) -> Left errs
+
   where
     searchTxt = if T.null searchEditTxt then "." else searchEditTxt
 
-    searchInclude:searchExclude = T.splitOn "!" searchTxt
+    mkRe:: T.Text -> Either String RS.Regex
+    mkRe t = RS.compile RT.blankCompOpt RT.blankExecOpt $ T.unpack t
 
-    txtToFilterPredicate reStr x = x =~ (T.unpack reStr)
-    matchAnyOfPredicate reStrs x = or $ map (\p -> p x) $ map (txtToFilterPredicate) reStrs
-
-    filterIncludePredicate = txtToFilterPredicate searchInclude
-    filterExcludePredicate = matchAnyOfPredicate searchExclude
-
+    compileRes:: [Either String RS.Regex]
+    compileRes = fmap (mkRe) $ T.splitOn "!" searchTxt

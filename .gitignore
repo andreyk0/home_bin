@@ -3,5 +3,6 @@
 *.p_o
 
 /ifind
+/ifind-prof
 /jar-dups
 /pretty-json

@@ -38,11 +38,11 @@ defaultFilters =
   FindFilters { excludeDirectories = ["\\.git$"
                                      , "\\.svn$"
                                      ]
-              , excludePaths = [ "^.*\\.class$"
-                               , "^.*\\.swp$"
-                               , "^.*\\.hi$"
-                               , "^.*\\.o$"
-                               , "^.*\\.jar$"
+              , excludePaths = [ "\\.class$"
+                               , "\\.swp$"
+                               , "\\.hi$"
+                               , "\\.o$"
+                               , "\\.jar$"
                                ]
               }
 
