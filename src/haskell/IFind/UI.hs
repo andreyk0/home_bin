@@ -5,7 +5,6 @@ module IFind.UI (
 ) where
 
 import Control.Applicative
-import Control.DeepSeq
 import Data.Either
 import Data.IORef
 import Graphics.Vty hiding (pad)
@@ -40,6 +39,7 @@ data SearchApp =
               -- search state
               , matchingFilePaths:: IORef [FilePath]
               , allFilePaths:: [FilePath]
+              , ignoreCase:: IORef Bool
               }
 
 
@@ -73,6 +73,7 @@ newSearchApp opts = do
 
   allFilePaths' <- findAllFilePaths opts
   matchingFilePathsRef <- newIORef allFilePaths'
+  ignoreCaseRef <- newIORef $ caseInsensitive opts
 
   let sApp = SearchApp { uiWidget = uiWidget'
                        , statusWidget = statusWidget'
@@ -81,6 +82,7 @@ newSearchApp opts = do
                        , activateHandlers = activateHandlers'
                        , matchingFilePaths = matchingFilePathsRef
                        , allFilePaths = allFilePaths'
+                       , ignoreCase = ignoreCaseRef
                        }
 
   _ <- updateSearchResults sApp
@@ -92,11 +94,23 @@ newSearchApp opts = do
     updateSearchResults sApp
     return ()
 
+  editSearchWidget' `onKeyPressed` \_ key mods -> do
+    case (key, mods) of
+      (KASCII 'u', [MCtrl]) -> do
+        ic <- readIORef ignoreCaseRef
+        writeIORef ignoreCaseRef (not ic)
+        updateSearchResults sApp
+        return True
+      (_, _)     ->
+        return False
+
   fg <- newFocusGroup
 
-  fg `onKeyPressed` \_ k _ -> do
-    case k of
-      KEsc -> exitSuccess
+  fg `onKeyPressed` \_ key _ -> do
+    case key of
+      KEsc -> do
+        shutdownUi
+        exitSuccess
       _    -> return False
 
   _ <- addToFocusGroup fg editSearchWidget'
@@ -108,8 +122,9 @@ updateSearchResults:: SearchApp -> IO ()
 updateSearchResults sApp = do
   clearList $ searchResultsWidget sApp
   searchEditTxt <- getEditText $ editSearchWidget sApp
+  ignoreCase' <- readIORef $ ignoreCase sApp
 
-  case () `deepseq` searchTxtToFilterPredicate searchEditTxt of
+  case searchTxtToFilterPredicate ignoreCase' searchEditTxt of
     Left es -> do
       writeIORef (matchingFilePaths sApp) []
       addToResultsList sApp es
@@ -138,16 +153,19 @@ updateStatusText sApp = do
   matchingFps <- readIORef (matchingFilePaths sApp)
   let numResults = length matchingFps
   searchEditTxt <- getEditText $ editSearchWidget sApp
+  ignoreCase' <- readIORef $ ignoreCase sApp
+  let statusChr = if ignoreCase' then '*' else ']'
+
   if T.null searchEditTxt
     then setText (statusWidget sApp) $ T.pack $ "Search: "
-    else setText (statusWidget sApp) $ T.pack $ printf "[%5d] " numResults
+    else setText (statusWidget sApp) $ T.pack $ printf "[%5d%c " numResults statusChr
 
 
 -- | searchTxt can be of the form "foo!bar!baz",
 --   this behaves similar to 'grep foo | grep -v bar | grep -v baz'
 --   Return either Left regex compilation errors or Right file path testing predicate
-searchTxtToFilterPredicate:: T.Text -> Either [String] (FilePath -> Bool)
-searchTxtToFilterPredicate searchEditTxt =
+searchTxtToFilterPredicate:: Bool -> T.Text -> Either [String] (FilePath -> Bool)
+searchTxtToFilterPredicate reIgnoreCase searchEditTxt =
   case partitionEithers compileRes of
     ([], (includeRe:excludeRes)) -> Right $ \fp -> (matchRe includeRe fp) &&
                                                    (not . anyOf (fmap (matchRe) excludeRes) $ fp)
@@ -157,7 +175,16 @@ searchTxtToFilterPredicate searchEditTxt =
     searchTxt = if T.null searchEditTxt then "." else searchEditTxt
 
     mkRe:: T.Text -> Either String RS.Regex
-    mkRe t = RS.compile RT.blankCompOpt RT.blankExecOpt $ T.unpack t
+    mkRe t = RS.compile reCompOpt reExecOpt $ T.unpack t
+
+    reCompOpt = RT.CompOption { RT.caseSensitive = not reIgnoreCase
+                              , RT.multiline = False
+                              , RT.rightAssoc = False
+                              , RT.newSyntax = True
+                              , RT.lastStarGreedy = False }
+
+    reExecOpt = RT.ExecOption { RT.captureGroups = False }
+
 
     compileRes:: [Either String RS.Regex]
     compileRes = fmap (mkRe) $ T.splitOn "!" searchTxt

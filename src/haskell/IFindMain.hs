@@ -12,11 +12,13 @@ iFindOpts =
             , outFile = Nothing       &= help "output file name"
             , searchRe = ""           &= help "initial value of search regex"
             , noDefaultConfig = False &= help "ignore default config settings"
+            , caseInsensitive = False &= help "turns on case-insensitive search"
             } &=
               program "ifind" &=
               help ("Interactive 'find' utility, search file names with regexes. " ++
                     " Search text takes multiple regexes, separated by ! which has" ++
                     " an effect similar to \".. |grep -v ..\"." ++
+                    " Ctrl-u toggles case (in)sensitive search." ++
                     " $HOME/.ifind contains default config (default exclusion rules).")
 
 main :: IO ()
