@@ -6,6 +6,9 @@ import IFind.Opts
 import IFind.UI
 import System.Console.CmdArgs
 
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+
 iFindOpts :: IFindOpts
 iFindOpts =
   IFindOpts { inDir = "."             &= help "directory to search recursively"
@@ -26,5 +29,5 @@ main = do
   opts <- cmdArgs iFindOpts
   fps <- runUI opts
   case outFile opts of
-    Just fname -> writeFile fname $ unlines fps
-    Nothing -> putStrLn $ unlines fps -- not terribly useful but for debugging
+    Just fname -> TIO.writeFile fname $ T.unlines fps
+    Nothing -> TIO.putStrLn $ T.unlines fps -- not terribly useful but for debugging

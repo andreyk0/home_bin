@@ -12,15 +12,13 @@ import Graphics.Vty.Widgets.All
 import System.Exit (exitSuccess)
 import Text.Printf
 
-import qualified Text.Regex.TDFA as RT
-import qualified Text.Regex.TDFA.String as RS
-
 import qualified Data.Text as T
+import qualified Text.Regex.TDFA as R
+import qualified Text.Regex.TDFA.Text as RT
 
 import IFind.FS
 import IFind.Opts
 import Util.List
-import Util.Regex
 
 
 -- This type isn't pretty, but we have to specify the type of the
@@ -37,14 +35,14 @@ data SearchApp =
               , searchResultsWidget :: Widget (List T.Text FormattedText)
               , activateHandlers :: Handlers SearchApp
               -- search state
-              , matchingFilePaths:: IORef [FilePath]
-              , allFilePaths:: [FilePath]
+              , matchingFilePaths:: IORef [TextFilePath]
+              , allFilePaths:: [TextFilePath]
               , ignoreCase:: IORef Bool
               }
 
 
 -- | runs UI, returns matching file paths
-runUI :: IFindOpts -> IO [FilePath]
+runUI :: IFindOpts -> IO [TextFilePath]
 runUI opts = do
   (ui, fg) <- newSearchApp opts
 
@@ -127,7 +125,7 @@ updateSearchResults sApp = do
   case searchTxtToFilterPredicate ignoreCase' searchEditTxt of
     Left es -> do
       writeIORef (matchingFilePaths sApp) []
-      addToResultsList sApp es
+      addToResultsList sApp $ fmap (T.pack) es
 
     Right filterPredicate -> do
       let matchingFps = filter (filterPredicate) $ allFilePaths sApp
@@ -141,11 +139,11 @@ updateSearchResults sApp = do
   updateStatusText sApp
 
 
-addToResultsList:: SearchApp -> [String] -> IO ()
+addToResultsList:: SearchApp -> [T.Text] -> IO ()
 addToResultsList sApp xs =
   mapM_ (\x -> do
-          xw <- plainText x
-          addToList (searchResultsWidget sApp) x xw) $ fmap (T.pack) xs
+          xw <- textWidget nullFormatter x
+          addToList (searchResultsWidget sApp) x xw) xs
 
 
 updateStatusText:: SearchApp -> IO ()
@@ -164,27 +162,27 @@ updateStatusText sApp = do
 -- | searchTxt can be of the form "foo!bar!baz",
 --   this behaves similar to 'grep foo | grep -v bar | grep -v baz'
 --   Return either Left regex compilation errors or Right file path testing predicate
-searchTxtToFilterPredicate:: Bool -> T.Text -> Either [String] (FilePath -> Bool)
+searchTxtToFilterPredicate:: Bool -> T.Text -> Either [String] (TextFilePath -> Bool)
 searchTxtToFilterPredicate reIgnoreCase searchEditTxt =
   case partitionEithers compileRes of
-    ([], (includeRe:excludeRes)) -> Right $ \fp -> (matchRe includeRe fp) &&
-                                                   (not . anyOf (fmap (matchRe) excludeRes) $ fp)
+    ([], (includeRe:excludeRes)) -> Right $ \fp -> (R.matchTest includeRe fp) &&
+                                                   (not . anyOf (fmap (R.matchTest) excludeRes) $ fp)
     (errs, _) -> Left errs
 
   where
     searchTxt = if T.null searchEditTxt then "." else searchEditTxt
 
-    mkRe:: T.Text -> Either String RS.Regex
-    mkRe t = RS.compile reCompOpt reExecOpt $ T.unpack t
+    mkRe:: T.Text -> Either String RT.Regex
+    mkRe t = RT.compile reCompOpt reExecOpt t
 
-    reCompOpt = RT.CompOption { RT.caseSensitive = not reIgnoreCase
-                              , RT.multiline = False
-                              , RT.rightAssoc = False
-                              , RT.newSyntax = True
-                              , RT.lastStarGreedy = False }
+    reCompOpt = R.CompOption { R.caseSensitive = not reIgnoreCase
+                             , R.multiline = False
+                             , R.rightAssoc = False
+                             , R.newSyntax = True
+                             , R.lastStarGreedy = False }
 
-    reExecOpt = RT.ExecOption { RT.captureGroups = False }
+    reExecOpt = R.ExecOption { R.captureGroups = False }
 
 
-    compileRes:: [Either String RS.Regex]
+    compileRes:: [Either String RT.Regex]
     compileRes = fmap (mkRe) $ T.splitOn "!" searchTxt
