@@ -40,6 +40,11 @@ data SearchApp =
               , ignoreCase:: IORef Bool
               }
 
+focusedItemAttr:: Attr
+focusedItemAttr = white `on` black
+
+searchCountAttr:: Attr
+searchCountAttr = yellow `on` black
 
 -- | runs UI, returns matching file paths
 runUI :: IFindOpts -> IO [TextFilePath]
@@ -49,23 +54,20 @@ runUI opts = do
   c <- newCollection
   _ <- addToCollection c (uiWidget ui) fg
 
-  runUi c $ defaultContext { focusAttr = def_attr
-                           }
-
+  runUi c $ defaultContext { focusAttr = focusedItemAttr }
   readIORef $ matchingFilePaths ui
-
 
 
 newSearchApp :: IFindOpts -> IO (SearchApp, Widget FocusGroup)
 newSearchApp opts = do
   editSearchWidget' <- editWidget
   searchResultsWidget' <- newTextList def_attr []
-  statusWidget' <- plainText "*>"
+  statusWidget' <- plainText "*>" >>= withNormalAttribute searchCountAttr
   activateHandlers' <- newHandlers
 
   _ <- setEditText editSearchWidget' $ T.pack (searchRe opts)
 
-  uiWidget'  <- ((hFixed 8  statusWidget') <++> (vFixed 1 editSearchWidget'))
+  uiWidget'  <- ( (hFixed 8  statusWidget') <++> (vFixed 1 editSearchWidget') )
              <-->
              (return searchResultsWidget')
 
@@ -102,6 +104,23 @@ newSearchApp opts = do
       (_, _)     ->
         return False
 
+  searchResultsWidget' `onKeyPressed` \w key mods ->
+    case (key, mods) of
+      (KASCII 'p', [MCtrl]) -> scrollUp w >> return True
+      (KASCII 'n', [MCtrl]) -> scrollDown w >> return True
+      (KASCII 'k', []) -> scrollUp w >> return True
+      (KASCII 'j', []) -> scrollDown w >> return True
+      (_, _)           -> return False
+
+  searchResultsWidget' `onItemActivated` \_ -> do
+    selectedItem <- getSelected searchResultsWidget'
+    case selectedItem of
+      Just (_, (t, _)) -> do
+        writeIORef matchingFilePathsRef [t]
+        shutdownUi
+      Nothing ->
+        return ()
+
   fg <- newFocusGroup
 
   fg `onKeyPressed` \_ key _ -> do
@@ -112,6 +131,7 @@ newSearchApp opts = do
       _    -> return False
 
   _ <- addToFocusGroup fg editSearchWidget'
+  _ <- addToFocusGroup fg searchResultsWidget'
 
   return (sApp, fg)
 
@@ -131,7 +151,7 @@ updateSearchResults sApp = do
       let matchingFps = filter (filterPredicate) $ allFilePaths sApp
 
       -- height of the screen, don't need to add to list more results than this
-      maxHeight <- fromIntegral <$> region_height  <$> (terminal_handle >>= display_bounds)
+      maxHeight <- fromIntegral <$> region_height  <$> (getCurrentSize $ searchResultsWidget sApp)
 
       writeIORef (matchingFilePaths sApp) matchingFps
       addToResultsList sApp $ take maxHeight matchingFps
@@ -182,7 +202,6 @@ searchTxtToFilterPredicate reIgnoreCase searchEditTxt =
                              , R.lastStarGreedy = False }
 
     reExecOpt = R.ExecOption { R.captureGroups = False }
-
 
     compileRes:: [Either String RT.Regex]
     compileRes = fmap (mkRe) $ T.splitOn "!" searchTxt

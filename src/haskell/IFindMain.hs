@@ -30,4 +30,4 @@ main = do
   fps <- runUI opts
   case outFile opts of
     Just fname -> TIO.writeFile fname $ T.unlines fps
-    Nothing -> TIO.putStrLn $ T.unlines fps -- not terribly useful but for debugging
+    Nothing -> TIO.putStr $ T.unlines fps -- not terribly useful but for debugging
