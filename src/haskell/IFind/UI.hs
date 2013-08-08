@@ -16,6 +16,7 @@ import qualified Data.Text as T
 import qualified Text.Regex.TDFA as R
 import qualified Text.Regex.TDFA.Text as RT
 
+import IFind.Config
 import IFind.FS
 import IFind.Opts
 import Util.List
@@ -40,29 +41,35 @@ data SearchApp =
               , ignoreCase:: IORef Bool
               }
 
-focusedItemAttr:: Attr
-focusedItemAttr = white `on` black
+focusedItemAttr:: IFindConfig -> Attr
+focusedItemAttr conf = fgc `on` bgc
+  where
+    bgc = focusedItemBackgroundColor . uiColors $ conf
+    fgc = focusedItemForegroundColor . uiColors $ conf
 
-searchCountAttr:: Attr
-searchCountAttr = yellow `on` black
+searchCountAttr:: IFindConfig -> Attr
+searchCountAttr conf = fgc `on` bgc
+  where
+    bgc = searchCountBackgroundColor . uiColors $ conf
+    fgc = searchCountForegroundColor . uiColors $ conf
 
 -- | runs UI, returns matching file paths
-runUI :: IFindOpts -> IO [TextFilePath]
-runUI opts = do
-  (ui, fg) <- newSearchApp opts
+runUI :: IFindOpts -> IFindConfig -> IO [TextFilePath]
+runUI opts conf = do
+  (ui, fg) <- newSearchApp opts conf
 
   c <- newCollection
   _ <- addToCollection c (uiWidget ui) fg
 
-  runUi c $ defaultContext { focusAttr = focusedItemAttr }
+  runUi c $ defaultContext { focusAttr = focusedItemAttr conf }
   readIORef $ matchingFilePaths ui
 
 
-newSearchApp :: IFindOpts -> IO (SearchApp, Widget FocusGroup)
-newSearchApp opts = do
+newSearchApp :: IFindOpts -> IFindConfig -> IO (SearchApp, Widget FocusGroup)
+newSearchApp opts conf = do
   editSearchWidget' <- editWidget
   searchResultsWidget' <- newTextList def_attr []
-  statusWidget' <- plainText "*>" >>= withNormalAttribute searchCountAttr
+  statusWidget' <- plainText "*>" >>= withNormalAttribute (searchCountAttr conf)
   activateHandlers' <- newHandlers
 
   _ <- setEditText editSearchWidget' $ T.pack (searchRe opts)
@@ -71,7 +78,7 @@ newSearchApp opts = do
              <-->
              (return searchResultsWidget')
 
-  allFilePaths' <- findAllFilePaths opts
+  allFilePaths' <- findAllFilePaths opts conf
   matchingFilePathsRef <- newIORef allFilePaths'
   ignoreCaseRef <- newIORef $ caseInsensitive opts
 
@@ -84,8 +91,6 @@ newSearchApp opts = do
                        , allFilePaths = allFilePaths'
                        , ignoreCase = ignoreCaseRef
                        }
-
-  _ <- updateSearchResults sApp
 
   editSearchWidget' `onActivate` \_ -> do
     shutdownUi
@@ -133,6 +138,8 @@ newSearchApp opts = do
   _ <- addToFocusGroup fg editSearchWidget'
   _ <- addToFocusGroup fg searchResultsWidget'
 
+  _ <- updateSearchResults sApp
+
   return (sApp, fg)
 
 
@@ -151,7 +158,7 @@ updateSearchResults sApp = do
       let matchingFps = filter (filterPredicate) $ allFilePaths sApp
 
       -- height of the screen, don't need to add to list more results than this
-      maxHeight <- fromIntegral <$> region_height  <$> (getCurrentSize $ searchResultsWidget sApp)
+      maxHeight <- fromIntegral <$> region_height  <$> (terminal_handle >>= display_bounds)
 
       writeIORef (matchingFilePaths sApp) matchingFps
       addToResultsList sApp $ take maxHeight matchingFps
@@ -184,13 +191,15 @@ updateStatusText sApp = do
 --   Return either Left regex compilation errors or Right file path testing predicate
 searchTxtToFilterPredicate:: Bool -> T.Text -> Either [String] (TextFilePath -> Bool)
 searchTxtToFilterPredicate reIgnoreCase searchEditTxt =
-  case partitionEithers compileRes of
-    ([], (includeRe:excludeRes)) -> Right $ \fp -> (R.matchTest includeRe fp) &&
-                                                   (not . anyOf (fmap (R.matchTest) excludeRes) $ fp)
-    (errs, _) -> Left errs
+  if T.null searchEditTxt
+    then Right (\_ -> True)
+    else compileRegex
 
   where
-    searchTxt = if T.null searchEditTxt then "." else searchEditTxt
+    compileRegex = case partitionEithers compileRes of
+                     ([], (includeRe:excludeRes)) -> Right $ \fp -> (R.matchTest includeRe fp) &&
+                                                                    (not . anyOf (fmap (R.matchTest) excludeRes) $ fp)
+                     (errs, _) -> Left errs
 
     mkRe:: T.Text -> Either String RT.Regex
     mkRe t = RT.compile reCompOpt reExecOpt t
@@ -204,4 +213,4 @@ searchTxtToFilterPredicate reIgnoreCase searchEditTxt =
     reExecOpt = R.ExecOption { R.captureGroups = False }
 
     compileRes:: [Either String RT.Regex]
-    compileRes = fmap (mkRe) $ T.splitOn "!" searchTxt
+    compileRes = fmap (mkRe) $ T.splitOn "!" searchEditTxt

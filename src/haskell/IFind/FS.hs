@@ -18,9 +18,9 @@ import Util.List
 -- Convert Strings to Texts and work with that for incremental search
 type TextFilePath = T.Text
 
-findAllFilePaths:: IFindOpts -> IO [TextFilePath]
-findAllFilePaths opts = do
-  filters <- readConfFile opts
+findAllFilePaths:: IFindOpts -> IFindConfig -> IO [TextFilePath]
+findAllFilePaths opts conf = do
+  let filters = findFilters conf
   let dF = (filterOut $ excludeDirectories filters) <$> filePath
   let fF = (filterOut $ excludePaths filters) <$> filePath
   let regularFilesOrSymlinks = (fileType ==? RegularFile) ||? (fileType ==? SymbolicLink)

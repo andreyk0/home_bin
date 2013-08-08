@@ -10,6 +10,6 @@ data IFindOpts =
   IFindOpts { inDir :: FilePath
             , outFile:: Maybe FilePath
             , searchRe:: String
-            , noDefaultConfig:: Bool
+            , noDefaultFilters:: Bool
             , caseInsensitive:: Bool }
     deriving (Show, Data, Typeable)

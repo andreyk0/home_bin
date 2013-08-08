@@ -28,8 +28,8 @@ jar-dups: $(HSFILES)
 	$(GHC) $(THREADED) -o $@ $(SRC)/JarDupsMain.hs
 
 ifind: $(HSFILES)
-	$(GHC) --make $(THREADED)                       -o $@      $(SRC)/IFindMain.hs
-	#$(GHC) --make $(THREADED) $(GHC_PROF) -osuf p_o -o $@-prof $(SRC)/IFindMain.hs
+	$(GHC) -fno-warn-orphans --make $(THREADED)                       -o $@      $(SRC)/IFindMain.hs
+	#$(GHC) -fno-warn-orphans --make $(THREADED) $(GHC_PROF) -osuf p_o -o $@-prof $(SRC)/IFindMain.hs
 
 # install cabal dependencies
 deps:
