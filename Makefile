@@ -19,7 +19,7 @@ CABAL_DEPS:=aeson aeson-pretty filemanip hoogle shqq regex-tdfa-text missingh vt
 
 .PHONY: deps tools
 
-tools: ifind pretty-json jar-dups
+tools: ifind pretty-json jar-dups mssh
 
 pretty-json: $(HSFILES)
 	$(GHC) -o $@ $(SRC)/PrettyJsonMain.hs
@@ -30,6 +30,9 @@ jar-dups: $(HSFILES)
 ifind: $(HSFILES)
 	$(GHC) -fno-warn-orphans --make $(THREADED)                       -o $@      $(SRC)/IFindMain.hs
 	#$(GHC) -fno-warn-orphans --make $(THREADED) $(GHC_PROF) -osuf p_o -o $@-prof $(SRC)/IFindMain.hs
+
+mssh: $(HSFILES)
+	$(GHC) $(THREADED) -o $@ $(SRC)/MSSHMain.hs
 
 # install cabal dependencies
 deps:
