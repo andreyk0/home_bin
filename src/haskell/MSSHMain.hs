@@ -5,40 +5,29 @@ module Main (
 ) where
 
 import Control.Concurrent
-import System.Console.CmdArgs
-import Control.Applicative
-import System.Process
-import System.IO
-import System.Console.Haskeline
-import System.Environment
-import System.Directory
-import Control.Exception (AsyncException(..))
 import Control.Monad.IO.Class
+import Data.Maybe
+import System.Console.CmdArgs
+import System.Console.Haskeline
+import System.Directory
+import System.IO
+import System.Process
 import Text.Regex.TDFA
 
-import Data.Maybe
-
---import qualified Data.Text as T
---import qualified Data.Text.IO as TIO
-
-
-
 data MSSHOpts =
-  MSSHOpts { foo:: Bool
-           , servers:: [String]
+  MSSHOpts { sshCommand:: String
+           , hosts:: [String]
            }
            deriving(Show, Data, Typeable)
 
-
 mSSHOpts :: MSSHOpts
 mSSHOpts =
-  MSSHOpts { foo = False &= help "foo"
-           , servers = [] &= args
+  MSSHOpts { sshCommand = "ssh -T" &= help "ssh command to run for each hostname, defaults to 'ssh -T'"
+           , hosts = [] &= args
            } &=
               program "mssh" &=
-              help ("Drive multiple SSH sessions with the same keyboard input\n"++
-                    "server1 server[2,3] server[4,5..9]")
-
+                summary "Drive multiple SSH sessions with the same keyboard input" &=
+                help "Usage: mssh host1 host2.foo.bar host4,5 host6,7:9 host10:20:2"
 
 consumeOutput:: String -> Handle -> IO ()
 consumeOutput prefix h = do
@@ -54,28 +43,26 @@ consumeOutput prefix h = do
 
 startSSH:: MSSHOpts -> String -> IO (Handle, ProcessHandle)
 startSSH opts host = do
-  (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ "ssh -T " ++ host
+  (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ (sshCommand opts) ++ " " ++ host
   hSetBuffering hIn LineBuffering
   hSetBuffering hOut LineBuffering
   hSetBuffering hErr LineBuffering
-  forkIO $ consumeOutput (host ++ "> ") hOut
-  forkIO $ consumeOutput (host ++ "! ") hErr
+  _ <- forkIO $ consumeOutput (host ++ "> ") hOut
+  _ <- forkIO $ consumeOutput (host ++ "! ") hErr
   return (hIn, hProc)
-
 
 msshHistoryFile:: IO FilePath
 msshHistoryFile = do
   hDir <- getHomeDirectory
   return $ hDir ++ "/.mssh"
 
-
 msshPrompt:: String
-msshPrompt = "?> "
+msshPrompt = "mssh> "
 
 -- foo1,2,3:5,11 -->
 --  foo1 foo2 foo3 foo4 foo5 foo11
-expandServerNames:: String -> [String]
-expandServerNames sn =
+expandHostNames:: String -> [String]
+expandHostNames sn =
   case listToMaybe $ splitBaseNameAndNumRanges sn of
     Just (_:baseName:numRanges:suffix:[]) ->
       map (flip (++) suffix) $ map ((++) baseName) $ concat $ map (expandNumRange) $ splitNumRanges numRanges
@@ -102,20 +89,16 @@ expandServerNames sn =
         _ -> [nr]
       where nums = map (read . head) (nr =~ "[^:]+" :: [[String]]) :: [Int]
 
-
 main :: IO ()
 main = do
     opts <- cmdArgs mSSHOpts
-    putStrLn $ show opts
+    let allHostNames = concat $ map (expandHostNames) $ hosts opts
 
-    let allServerNames = concat $ map (expandServerNames) $ servers opts
-
-    inputAndProcHandles <- mapM (startSSH opts) allServerNames
+    inputAndProcHandles <- mapM (startSSH opts) allHostNames
     let hsIn = map (fst) inputAndProcHandles
     let hsProc = map (snd) inputAndProcHandles
 
     haskelineSettings <- fmap (\hf -> defaultSettings { historyFile = Just hf }) msshHistoryFile
-
     runInputT haskelineSettings$ withInterrupt $ loop hsIn
 
     mapM_ waitForProcess hsProc
@@ -129,7 +112,7 @@ main = do
     loop:: [Handle] -> InputT IO ()
     loop hsIn = do
       minput <- handle (\Interrupt -> return Nothing)
-                       $ getInputLine "?> "
+                       $ getInputLine msshPrompt
       case minput of
         Nothing -> do
           liftIO $ mapM_ hClose hsIn
