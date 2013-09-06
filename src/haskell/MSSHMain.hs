@@ -14,6 +14,9 @@ import System.Environment
 import System.Directory
 import Control.Exception (AsyncException(..))
 import Control.Monad.IO.Class
+import Text.Regex.TDFA
+
+import Data.Maybe
 
 --import qualified Data.Text as T
 --import qualified Data.Text.IO as TIO
@@ -51,7 +54,7 @@ consumeOutput prefix h = do
 
 startSSH:: MSSHOpts -> String -> IO (Handle, ProcessHandle)
 startSSH opts host = do
-  (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ "ssh -t " ++ host
+  (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ "ssh -T " ++ host
   hSetBuffering hIn LineBuffering
   hSetBuffering hOut LineBuffering
   hSetBuffering hErr LineBuffering
@@ -69,13 +72,45 @@ msshHistoryFile = do
 msshPrompt:: String
 msshPrompt = "?> "
 
+-- foo1,2,3:5,11 -->
+--  foo1 foo2 foo3 foo4 foo5 foo11
+expandServerNames:: String -> [String]
+expandServerNames sn =
+  case listToMaybe $ splitBaseNameAndNumRanges sn of
+    Just (_:baseName:numRanges:suffix:[]) ->
+      map (flip (++) suffix) $ map ((++) baseName) $ concat $ map (expandNumRange) $ splitNumRanges numRanges
+    Just _ -> [sn]
+    Nothing -> [sn]
+
+  where
+    -- ghci> "foo1,2,3:5,11.bar.baz" =~ "([^0-9,:]+)([0-9,:]+)(\\..+)?" :: [[String]]
+    -- [["foo1,2,3:5,11.bar.baz","foo","1,2,3:5,11",".bar.baz"]]
+    splitBaseNameAndNumRanges:: String -> [[String]]
+    splitBaseNameAndNumRanges s = s =~ "([^0-9,:]+)([0-9,:]+)(\\..+)?"
+
+    -- ghci> "1,2:3,4,5" =~ "[^,]+" :: [[String]]
+    -- [["1"],["2:3"],["4"],["5"]]
+    splitNumRanges:: String -> [String]
+    splitNumRanges nr = map (head) (nr =~ "[^,]+" :: [[String]])
+
+    -- 1:3 -> [1,2,3]
+    -- 13 -> [13]
+    expandNumRange:: String -> [String]
+    expandNumRange nr = case nums of
+        from:to:[]      -> map (show) [ from .. to ]
+        from:to:step:[] -> map (show) [ from, from+step .. to ]
+        _ -> [nr]
+      where nums = map (read . head) (nr =~ "[^:]+" :: [[String]]) :: [Int]
+
 
 main :: IO ()
 main = do
     opts <- cmdArgs mSSHOpts
     putStrLn $ show opts
 
-    inputAndProcHandles <- mapM (startSSH opts) (servers opts)
+    let allServerNames = concat $ map (expandServerNames) $ servers opts
+
+    inputAndProcHandles <- mapM (startSSH opts) allServerNames
     let hsIn = map (fst) inputAndProcHandles
     let hsProc = map (snd) inputAndProcHandles
 
