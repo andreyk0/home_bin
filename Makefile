@@ -15,7 +15,17 @@ GHC:=ghc -i$(SRC) -Wall -O2
 
 THREADED:=-threaded -with-rtsopts="-N"
 
-CABAL_DEPS:=aeson aeson-pretty filemanip hoogle shqq regex-tdfa-text missingh vty-ui zip-archive
+CABAL_DEPS:= \
+	aeson \
+	aeson-pretty \
+	filemanip \
+	haskeline \
+	hoogle \
+	missingh \
+	regex-tdfa-text \
+	shqq \
+	vty-ui \
+	zip-archive
 
 .PHONY: deps tools
 
