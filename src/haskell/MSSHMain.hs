@@ -47,10 +47,10 @@ ansiColor c s = case c of
 
 -- | Consumes output from a given file handle,
 --   prints to screen and (optionally) saves to output file
-consumeOutput:: String       -- ^ output prefix
-             -> Handle       -- ^ file handle to read data from
-             -> Maybe Handle -- ^ file handle to optionally save output to
-             -> MVar ()      -- ^ empty MVar to sync up with the main thread when all output is written
+consumeOutput:: String -- ^ output prefix
+             -> Handle -- ^ file handle to read data from
+             -> Maybe (String, Handle) -- ^ line prefix / file handle to optionally save output to
+             -> MVar () -- ^ empty MVar to sync up with the main thread when all output is written
              -> IO ()
 consumeOutput prefix h saveFileH finishedOutputMV = do
   theEnd <- hIsEOF h
@@ -58,7 +58,7 @@ consumeOutput prefix h saveFileH finishedOutputMV = do
     then do
       l <- hGetLine h
       case saveFileH of
-        Just fh -> hPutStrLn fh l
+        Just (pfx, fh) -> hPutStrLn fh $ pfx ++ l
         Nothing -> return ()
       putStr $ "\r" ++ prefix ++ l ++ "\n\r" ++ msshPrompt
       hFlush stdout
@@ -74,7 +74,7 @@ startSSH:: MSSHOpts           -- ^ command line opts
         -> IO (Handle, ProcessHandle, [MVar ()]) -- ^ file handle to write commands to (input),
                                                  --  process handle (to wait for process to stop)
                                                  --  MVars to sync up with output consumer threads (wait for them all to finish)
-startSSH opts hostNameToPrefix saveFileH host = do
+startSSH opts hostNameToPrefix maybeSaveFileH host = do
   (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ (sshCommand opts) ++ " " ++ host
   hSetBuffering hIn LineBuffering
   hSetBuffering hOut LineBuffering
@@ -84,8 +84,10 @@ startSSH opts hostNameToPrefix saveFileH host = do
   let prefix = hostNameToPrefix host
   finishedOutMV <- newEmptyMVar
   finishedErrMV <- newEmptyMVar
-  _ <- forkIO $ consumeOutput (outColor $ prefix ++ "> ") hOut saveFileH finishedOutMV
-  _ <- forkIO $ consumeOutput (errColor $ prefix ++ "! ") hErr saveFileH finishedErrMV
+  let saveFileLinePrefix = host ++ ":" -- for easy sed, etc parsing
+  let saveFilePrefixAndFh = fmap (\fh -> (saveFileLinePrefix,fh)) maybeSaveFileH
+  _ <- forkIO $ consumeOutput (outColor $ prefix ++ "> ") hOut saveFilePrefixAndFh finishedOutMV
+  _ <- forkIO $ consumeOutput (errColor $ prefix ++ "! ") hErr saveFilePrefixAndFh finishedErrMV
   return (hIn, hProc, [finishedOutMV, finishedErrMV])
 
 -- | Path to command history file
