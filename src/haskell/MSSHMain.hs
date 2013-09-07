@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Main (
   main
@@ -12,10 +13,14 @@ import System.Console.Haskeline
 import System.Directory
 import System.IO
 import System.Process
+import Text.Printf
 import Text.Regex.TDFA
+import TupleTH
 
 data MSSHOpts =
   MSSHOpts { sshCommand:: String
+           , color:: Bool
+           , outFile:: Maybe FilePath
            , hosts:: [String]
            }
            deriving(Show, Data, Typeable)
@@ -23,34 +28,67 @@ data MSSHOpts =
 mSSHOpts :: MSSHOpts
 mSSHOpts =
   MSSHOpts { sshCommand = "ssh -T" &= help "ssh command to run for each hostname, defaults to 'ssh -T'"
+           , color = False &= help "turn on color output"
+           , outFile = Nothing &= help "save output to file"
            , hosts = [] &= args
            } &=
               program "mssh" &=
                 summary "Drive multiple SSH sessions with the same keyboard input" &=
                 help "Usage: mssh host1 host2.foo.bar host4,5 host6,7:9 host10:20:2"
 
-consumeOutput:: String -> Handle -> IO ()
-consumeOutput prefix h = do
+data AnsiColor = Black | Red | Green | Yellow  | Blue  | Magenta | Cyan  | White | Disabled
+  deriving (Show, Enum)
+
+-- | Quick color-printing hack
+ansiColor:: AnsiColor -> String -> String
+ansiColor c s = case c of
+  Disabled -> s
+  _ -> printf "\x1b[%d;2m%s\x1b[0m" (30+ (fromEnum c)) s
+
+-- | Consumes output from a given file handle,
+--   prints to screen and (optionally) saves to output file
+consumeOutput:: String       -- ^ output prefix
+             -> Handle       -- ^ file handle to read data from
+             -> Maybe Handle -- ^ file handle to optionally save output to
+             -> MVar ()      -- ^ empty MVar to sync up with the main thread when all output is written
+             -> IO ()
+consumeOutput prefix h saveFileH finishedOutputMV = do
   theEnd <- hIsEOF h
   if (not theEnd)
     then do
       l <- hGetLine h
+      case saveFileH of
+        Just fh -> hPutStrLn fh l
+        Nothing -> return ()
       putStr $ "\r" ++ prefix ++ l ++ "\n\r" ++ msshPrompt
       hFlush stdout
-      consumeOutput prefix h
+      consumeOutput prefix h saveFileH finishedOutputMV
     else
-      return ()
+      putMVar finishedOutputMV ()
 
-startSSH:: MSSHOpts -> String -> IO (Handle, ProcessHandle)
-startSSH opts host = do
+-- | Starts SSH and output printing IO threads
+startSSH:: MSSHOpts           -- ^ command line opts
+        -> (String -> String) -- ^ host name to prefix conversion func, for easy currying
+        -> Maybe Handle       -- ^ optional 'save file' output handle
+        -> String             -- ^ host name to connect to
+        -> IO (Handle, ProcessHandle, [MVar ()]) -- ^ file handle to write commands to (input),
+                                                 --  process handle (to wait for process to stop)
+                                                 --  MVars to sync up with output consumer threads (wait for them all to finish)
+startSSH opts hostNameToPrefix saveFileH host = do
   (hIn,hOut,hErr,hProc) <- runInteractiveCommand $ (sshCommand opts) ++ " " ++ host
   hSetBuffering hIn LineBuffering
   hSetBuffering hOut LineBuffering
   hSetBuffering hErr LineBuffering
-  _ <- forkIO $ consumeOutput (host ++ "> ") hOut
-  _ <- forkIO $ consumeOutput (host ++ "! ") hErr
-  return (hIn, hProc)
+  let outColor = ansiColor $ if (color opts) then Cyan else Disabled
+  let errColor = ansiColor $ if (color opts) then Red else Disabled
+  let prefix = hostNameToPrefix host
+  finishedOutMV <- newEmptyMVar
+  finishedErrMV <- newEmptyMVar
+  _ <- forkIO $ consumeOutput (outColor $ prefix ++ "> ") hOut saveFileH finishedOutMV
+  _ <- forkIO $ consumeOutput (errColor $ prefix ++ "! ") hErr saveFileH finishedErrMV
+  return (hIn, hProc, [finishedOutMV, finishedErrMV])
 
+-- | Path to command history file
 msshHistoryFile:: IO FilePath
 msshHistoryFile = do
   hDir <- getHomeDirectory
@@ -59,8 +97,8 @@ msshHistoryFile = do
 msshPrompt:: String
 msshPrompt = "mssh> "
 
--- foo1,2,3:5,11 -->
---  foo1 foo2 foo3 foo4 foo5 foo11
+-- | Parse host name shortcuts and expand them to full host names.
+--   E.g. foo1,2,3:5,11 --> foo1 foo2 foo3 foo4 foo5 foo11
 expandHostNames:: String -> [String]
 expandHostNames sn =
   case listToMaybe $ splitBaseNameAndNumRanges sn of
@@ -89,19 +127,41 @@ expandHostNames sn =
         _ -> [nr]
       where nums = map (read . head) (nr =~ "[^:]+" :: [[String]]) :: [Int]
 
+-- | TODO: Hmm, there's got to be a cleaner way
+maybeIO:: Maybe a -> (a -> IO b) -> IO (Maybe b)
+maybeIO x fx = do
+  case x of
+    Nothing -> return Nothing
+    Just v -> do
+      res <- fx v
+      return $ Just res
+
 main :: IO ()
 main = do
     opts <- cmdArgs mSSHOpts
-    let allHostNames = concat $ map (expandHostNames) $ hosts opts
 
-    inputAndProcHandles <- mapM (startSSH opts) allHostNames
-    let hsIn = map (fst) inputAndProcHandles
-    let hsProc = map (snd) inputAndProcHandles
+    saveFileFh <- maybeIO (outFile opts) $ \fp -> do
+      fh <- openFile fp WriteMode
+      hSetBuffering fh LineBuffering
+      return fh
+
+    let allHostNames = concat $ map (expandHostNames) $ hosts opts
+    let maxHostNameLen = maximum $ map (length) allHostNames
+    let padToMaxHostNameLen = (\h -> h ++ (take (maxHostNameLen - length h) $ repeat ' '))
+    let startSSHForHost = startSSH opts padToMaxHostNameLen saveFileFh
+
+    inputAndHandles <- mapM (startSSHForHost) allHostNames
+    let hsIn = map $(proj 3 0) inputAndHandles
+    let hsProc = map $(proj 3 1) inputAndHandles
+    let finishedOutMVs = concat $ map $(proj 3 2) inputAndHandles
 
     haskelineSettings <- fmap (\hf -> defaultSettings { historyFile = Just hf }) msshHistoryFile
     runInputT haskelineSettings$ withInterrupt $ loop hsIn
 
-    mapM_ waitForProcess hsProc
+    mapM_ waitForProcess hsProc -- wait for all procs to stop
+    mapM_ (takeMVar) finishedOutMVs -- wait for all output printing threads to stop
+    _ <- maybeIO saveFileFh hClose -- finish output to save file
+    return ()
 
   where
     sendInputLine:: [Handle] -> String -> IO ()

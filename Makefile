@@ -24,6 +24,7 @@ CABAL_DEPS:= \
 	missingh \
 	regex-tdfa-text \
 	shqq \
+	tuple-th \
 	vty-ui \
 	zip-archive
 
