@@ -110,10 +110,10 @@ expandHostNames sn =
     Nothing -> [sn]
 
   where
-    -- ghci> "foo1,2,3:5,11.bar.baz" =~ "([^0-9,:]+)([0-9,:]+)(\\..+)?" :: [[String]]
-    -- [["foo1,2,3:5,11.bar.baz","foo","1,2,3:5,11",".bar.baz"]]
+    -- ghci> "foo2bar4x1,2,3:5,11.bar.baz" =~ "^([a-zA-Z0-9\\-_]+[a-zA-Z\\-_])([0-9,:]+)(\\..+)?" :: [[String]]
+    -- [["foo2bar4x1,2,3:5,11.bar.baz","foo2bar4x","1,2,3:5,11",".bar.baz"]]
     splitBaseNameAndNumRanges:: String -> [[String]]
-    splitBaseNameAndNumRanges s = s =~ "([^0-9,:]+)([0-9,:]+)(\\..+)?"
+    splitBaseNameAndNumRanges s = s =~ "^([a-zA-Z0-9\\-_]+[a-zA-Z\\-_])([0-9,:]+)(\\..+)?"
 
     -- ghci> "1,2:3,4,5" =~ "[^,]+" :: [[String]]
     -- [["1"],["2:3"],["4"],["5"]]
