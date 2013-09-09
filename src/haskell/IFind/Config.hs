@@ -34,14 +34,14 @@ data UIColors =
            , searchCountBackgroundColor:: Color
            } deriving (Show)
 
-$(deriveJSON id ''UIColors)
+$(deriveJSON defaultOptions ''UIColors)
 
 -- | regex filters we apply to recursive find
 data FindFilters = FindFilters { excludeDirectories:: [String]
                                , excludePaths:: [String]
                                } deriving (Show)
 
-$(deriveJSON id ''FindFilters)
+$(deriveJSON defaultOptions ''FindFilters)
 
 -- | Common config parameters
 --   initially read from $HOME/.iconfig
@@ -50,7 +50,7 @@ data IFindConfig =
               , findFilters:: FindFilters
               } deriving (Show)
 
-$(deriveJSON id ''IFindConfig)
+$(deriveJSON defaultOptions ''IFindConfig)
 
 
 emptyFilters:: FindFilters
