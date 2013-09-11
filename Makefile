@@ -16,6 +16,7 @@ GHC:=ghc -i$(SRC) -Wall -O2
 THREADED:=-threaded -with-rtsopts="-N"
 
 CABAL_DEPS:= \
+	SafeSemaphore \
 	aeson \
 	aeson-pretty \
 	filemanip \
