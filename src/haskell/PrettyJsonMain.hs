@@ -63,5 +63,5 @@ decodeJsonBytes opts s = decodeJsonBytes' [] s
                                                                      , "contexts" .= toJSON contexts ]
 
         continueParsing acc s' = if L.null s'
-                                  then acc
+                                  then reverse acc
                                   else decodeJsonBytes' acc $ L.drop 1 s' -- skip 1 byte and try again
