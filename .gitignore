@@ -2,6 +2,7 @@
 *.o
 *.p_o
 
+/generate-test-seq
 /ifind
 /ifind-prof
 /jar-dups

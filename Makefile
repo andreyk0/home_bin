@@ -31,20 +31,28 @@ CABAL_DEPS:= \
 
 .PHONY: deps tools
 
-tools: ifind pretty-json jar-dups mssh
+tools: \
+	generate-test-seq \
+	ifind \
+	jar-dups \
+	mssh \
+	pretty-json
 
-pretty-json: $(HSFILES)
-	$(GHC) -o $@ $(SRC)/PrettyJsonMain.hs
-
-jar-dups: $(HSFILES)
-	$(GHC) $(THREADED) -o $@ $(SRC)/JarDupsMain.hs
+generate-test-seq: $(HSFILES)
+	$(GHC) -o $@ $(SRC)/GenerateTestSeqMain.hs
 
 ifind: $(HSFILES)
 	$(GHC) -fno-warn-orphans --make $(THREADED)                       -o $@      $(SRC)/IFindMain.hs
 	#$(GHC) -fno-warn-orphans --make $(THREADED) $(GHC_PROF) -osuf p_o -o $@-prof $(SRC)/IFindMain.hs
 
+jar-dups: $(HSFILES)
+	$(GHC) $(THREADED) -o $@ $(SRC)/JarDupsMain.hs
+
 mssh: $(HSFILES)
 	$(GHC) $(THREADED) -o $@ $(SRC)/MSSHMain.hs
+
+pretty-json: $(HSFILES)
+	$(GHC) -o $@ $(SRC)/PrettyJsonMain.hs
 
 # install cabal dependencies
 deps:
