@@ -1,7 +1,0 @@
-#!/usr/bin/perl
-
-use MIME::Base64;
-
-$decoded = <STDIN>;
-
-print &encode_base64($decoded);
