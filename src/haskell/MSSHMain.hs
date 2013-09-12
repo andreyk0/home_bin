@@ -87,10 +87,10 @@ main = do
 
     let numSSHStreams = 2 * (fromIntegral . length) allHostNames -- 2 streams (stdin/out) per host
 
-    Sem.wait endOfOutputSem numSSHStreams -- wait for SSH all output to stop
+    Sem.wait endOfOutputSem numSSHStreams -- wait for all SSH output to stop
     signalExit sshOutputMVar -- stop the console printing loop
-    Sem.wait endOfOutputSem 1 -- 1, loop itself exited
+    Sem.wait endOfOutputSem 1 -- wait for console printing loop to exit
 
-    _ <- T.forM saveFileFh hClose -- finish output to save file
+    _ <- T.forM saveFileFh hClose -- close 'save' file
 
     return ()
