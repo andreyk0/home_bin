@@ -21,7 +21,6 @@ CABAL_DEPS:= \
 	aeson-pretty \
 	filemanip \
 	haskeline \
-	hoogle \
 	missingh \
 	regex-tdfa-text \
 	shqq \
