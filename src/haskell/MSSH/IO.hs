@@ -1,5 +1,4 @@
 module MSSH.IO (
-  OutEvt,
   Tee,
   awaitTermination,
   consumeStdErr,
