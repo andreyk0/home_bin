@@ -55,7 +55,7 @@ pretty-json: $(HSFILES)
 
 # install cabal dependencies
 deps:
-	cabal install --enable-library-profiling $(CABAL_DEPS)
+	cabal install --verbose $(CABAL_DEPS)
 
 # kill all files not tracked by git
 nuke:
