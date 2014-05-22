@@ -34,7 +34,6 @@ tools: \
 	generate-test-seq \
 	ifind \
 	jar-dups \
-	mssh \
 	pretty-json
 
 generate-test-seq: $(HSFILES)
@@ -46,9 +45,6 @@ ifind: $(HSFILES)
 
 jar-dups: $(HSFILES)
 	$(GHC) $(THREADED) -o $@ $(SRC)/JarDupsMain.hs
-
-mssh: $(HSFILES)
-	$(GHC) $(THREADED) -o $@ $(SRC)/MSSHMain.hs
 
 pretty-json: $(HSFILES)
 	$(GHC) -o $@ $(SRC)/PrettyJsonMain.hs
