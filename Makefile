@@ -32,16 +32,11 @@ CABAL_DEPS:= \
 
 tools: \
 	generate-test-seq \
-	ifind \
 	jar-dups \
 	pretty-json
 
 generate-test-seq: $(HSFILES)
 	$(GHC) -o $@ $(SRC)/GenerateTestSeqMain.hs
-
-ifind: $(HSFILES)
-	$(GHC) -fno-warn-orphans --make $(THREADED)                       -o $@      $(SRC)/IFindMain.hs
-	#$(GHC) -fno-warn-orphans --make $(THREADED) $(GHC_PROF) -osuf p_o -o $@-prof $(SRC)/IFindMain.hs
 
 jar-dups: $(HSFILES)
 	$(GHC) $(THREADED) -o $@ $(SRC)/JarDupsMain.hs
