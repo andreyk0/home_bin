@@ -1,2 +1,0 @@
-#!/bin/sh
-find . -name '*.hs' -o -name '*.lhs' | xargs -Ii hothasktags --hh-language=TemplateHaskell i |  LC_COLLATE=C sort > tags

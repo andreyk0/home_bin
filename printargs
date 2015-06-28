@@ -1,7 +1,0 @@
-#!/usr/bin/ruby
-
-i = 0
-ARGV.each { |arg|
-	puts "ARG[#{i}]=[#{arg}]"
-	i += 1
-}

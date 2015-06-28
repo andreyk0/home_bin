@@ -1,6 +1,0 @@
-#!/bin/bash
-
-[ "$1" == '-y' ] || { echo 'are you sure?' ; exit 1 ; }
-
-cabal update && \
-exec cabal list --simple-output --installed | awk '{print $1}' | uniq | xargs -I {} cabal install {} --reinstall
