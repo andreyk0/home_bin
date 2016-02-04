@@ -1,0 +1,5 @@
+#!/bin/sh
+git branch --list --merged origin/master | \
+  egrep -v '^\*' | \
+  egrep -v '^\s*master$' | \
+  xargs -n 1 git branch -d
