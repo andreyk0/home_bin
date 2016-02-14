@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -e
+set -x
+
+SRC_ROOT=$HOME/work/haskell-sources
+
+mkdir -pv .sources
+cd .sources
+
+for p in `stack list-dependencies | sed -e 's/ /-/'` ; do
+  [ -d "$SRC_ROOT/$p" ] || ( cd $SRC_ROOT && stack unpack "$p" )
+  ln -sf "$SRC_ROOT/$p" ./$p
+done
