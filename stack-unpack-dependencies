@@ -9,6 +9,6 @@ mkdir -pv .sources
 cd .sources
 
 for p in `stack list-dependencies | sed -e 's/ /-/'` ; do
-  [ -d "$SRC_ROOT/$p" ] || ( cd $SRC_ROOT && stack unpack "$p" )
-  ln -sf "$SRC_ROOT/$p" ./$p
+  [ -d "$SRC_ROOT/$p" ] || ( cd $SRC_ROOT && stack unpack "$p" ) ; 
+  [ -e "$p" ] || ( ln -sf "$SRC_ROOT/$p" ./$p ) ;
 done

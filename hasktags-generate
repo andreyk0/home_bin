@@ -1,0 +1,8 @@
+#!/bin/bash
+
+[ -z "$1" ] && { echo "Usage: $0 dir(s)" ; exit 1 ; }
+
+find -L "$@" -name '*.hs' -or -name '*.lhs' -not -name 'Setup.lhs' | \
+  grep -v /test | \
+  grep -v /Test | \
+  hasktags --ctags --ignore-close-implementation --extendedctag STDIN
