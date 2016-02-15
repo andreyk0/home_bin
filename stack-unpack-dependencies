@@ -4,11 +4,12 @@ set -e
 set -x
 
 SRC_ROOT=$HOME/work/haskell-sources
+PROJ=$(basename $(ls -1 *.cabal | head) .cabal)
 
 mkdir -pv .sources
 cd .sources
 
-for p in `stack list-dependencies | sed -e 's/ /-/'` ; do
+for p in $(stack list-dependencies | egrep -v "^$PROJ " | sed -e 's/ /-/') ; do
   [ -d "$SRC_ROOT/$p" ] || ( cd $SRC_ROOT && stack unpack "$p" ) ; 
   [ -e "$p" ] || ( ln -sf "$SRC_ROOT/$p" ./$p ) ;
 done
