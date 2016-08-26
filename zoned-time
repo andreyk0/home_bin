@@ -1,0 +1,68 @@
+#!/usr/bin/env stack
+-- stack --silent --resolver lts-6.13 runghc --package time --package optparse-applicative
+
+--  -- -Wall
+
+
+{-# LANGUAGE RecordWildCards  #-}
+
+
+import           Control.Monad
+import           Data.List
+import           Data.Monoid
+import           Data.Time
+import           Options.Applicative
+
+
+data Args = Args { argTz :: TimeZone
+                 , argTimes :: [ZonedTime]
+                 } deriving (Show)
+
+
+parseArgs :: Parser Args
+parseArgs = Args
+     <$> option parseTimeZoneArg
+         ( long "time-zone"
+        <> short 'z'
+        <> value utc
+        <> showDefault
+        <> help "Target time zone." )
+     <*> many (argument parseTimeArg (metavar "ISO8601Dates..."))
+
+
+parseTimeZoneArg :: ReadM TimeZone
+parseTimeZoneArg = eitherReader $ \tzName ->
+  let maybeTz = find (\tz -> (timeZoneName tz) == tzName) $ utc : (knownTimeZones defaultTimeLocale)
+   in case maybeTz
+        of Nothing -> Left $ "Unable to find time zone " <> tzName
+           Just tz -> Right tz
+
+
+parseTimeArg :: ReadM ZonedTime
+parseTimeArg = eitherReader $ \tsStr ->
+  case parseTimeM False defaultTimeLocale iso8601FmtStr tsStr
+    of Nothing -> Left $ "failed to parse " <> tsStr <> " with " <> iso8601FmtStr
+       Just t  -> Right t
+
+
+iso8601FmtStr:: String
+iso8601FmtStr = "%Y-%m-%dT%H:%M:%S%Z"
+
+
+main:: IO ()
+main = execParser opts >>= runMain
+  where
+    opts = info (helper <*> parseArgs)
+      ( fullDesc
+     <> progDesc "Converts given time to different time zone."
+     <> header "Converts given time to different time zone." )
+
+
+
+runMain :: Args
+        -> IO ()
+runMain Args{..} = do
+  zonedNow <-getZonedTime
+  forM_ (if null argTimes then [zonedNow] else argTimes) $ \zt -> do
+    let zt' = utcToZonedTime argTz $ zonedTimeToUTC zt
+    putStrLn $ formatTime defaultTimeLocale iso8601FmtStr zt'
