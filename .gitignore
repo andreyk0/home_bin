@@ -2,4 +2,3 @@
 *.o
 *.p_o
 /jar-dups
-/sstats
