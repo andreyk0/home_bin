@@ -1,7 +1,5 @@
 *.hi
 *.o
 *.p_o
-
-/generate-test-seq
 /jar-dups
-/pretty-json
+/sstats
