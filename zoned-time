@@ -32,9 +32,9 @@ parseArgs = Args
 
 parseTimeZoneArg :: ReadM TimeZone
 parseTimeZoneArg = eitherReader $ \tzName ->
-  let maybeTz = find (\tz -> (timeZoneName tz) == tzName) $ utc : (knownTimeZones defaultTimeLocale)
+  let maybeTz = find (\tz -> (timeZoneName tz) == tzName) supportedZones
    in case maybeTz
-        of Nothing -> Left $ "Unable to find time zone " <> tzName
+        of Nothing -> Left $ "Unable to find time zone " <> tzName <> " in the list of supported zones " <> (show supportedZones)
            Just tz -> Right tz
 
 
@@ -45,6 +45,9 @@ parseTimeArg = eitherReader $ \tsStr ->
        Just t  -> Right t
 
 
+supportedZones :: [TimeZone]
+supportedZones = utc : (knownTimeZones defaultTimeLocale)
+
 iso8601FmtStr:: String
 iso8601FmtStr = "%Y-%m-%dT%H:%M:%S%Z"
 
@@ -54,7 +57,7 @@ main = execParser opts >>= runMain
   where
     opts = info (helper <*> parseArgs)
       ( fullDesc
-     <> progDesc "Converts given time to different time zone."
+     <> progDesc ("Converts given time to different time zone. Supported time zones: " <> (show supportedZones))
      <> header "Converts given time to different time zone." )
 
 
