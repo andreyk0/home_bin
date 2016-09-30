@@ -1,0 +1,93 @@
+#!/usr/bin/env stack
+{- stack
+   --resolver lts-7.1
+   --install-ghc
+   --silent
+   runghc
+   --package base
+   --package bytestring
+   --package conduit
+   --package optparse-applicative
+   --package pem
+   --package shell-conduit
+   --
+   -Wall
+   -Wno-type-defaults
+   -hide-all-packages
+-}
+
+{-# LANGUAGE ExtendedDefaultRules #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE RecordWildCards      #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+
+
+import           Control.Monad
+import qualified Data.Conduit.List as CL
+import           Data.Conduit.Shell
+import           Data.Monoid
+import           Data.PEM
+import           Options.Applicative as OA
+
+
+data Args = Args { argP12File :: FilePath
+                 , argP12Password :: Maybe String
+                 } deriving (Show)
+
+
+parseArgs :: Parser Args
+parseArgs = Args
+     <$> strOption
+         ( long "file"
+        <> short 'f'
+        <> help "P12 file name." )
+     <*> optional (strOption
+         ( long "password"
+        <> short 'p'
+        <> help "P12 password, any of the formats supported by openssl CLI, e.g. 'pass:password', 'env:var', 'file:pathname'."))
+
+
+main:: IO ()
+main = execParser opts >>= runMain
+  where
+    opts = OA.info (helper <*> parseArgs)
+      ( fullDesc
+     <> progDesc ("A few openssl shortcuts for viewing p12 files.")
+     <> header "A few openssl shortcuts for viewing p12 files." )
+
+
+runMain :: Args
+        -> IO ()
+runMain args@Args{..} = do
+  pems <- readPems args
+  forM_ pems showPEM
+
+
+readPems :: Args -> IO [PEM]
+readPems args = do
+  pemData <- run ( pkcs12NodesCmd args $| conduit (CL.fold (<>) "") )
+  case pemParseBS pemData
+    of Right pd -> return pd
+       Left e -> error $ "ERROR parsing PEM data " <> e
+
+
+showPEM :: PEM -> IO ()
+showPEM p@PEM{..} = (putStrLn "\n\n\n") >> do
+  case pemName
+    of "RSA PRIVATE KEY" -> run ( do pemtxt $| cat; pemtxt $| keyFingerprintCmd )
+       "CERTIFICATE"     -> run ( do pemtxt $| cat; pemtxt $| showCertificateCmd )
+       _                 -> run ( pemtxt $| cat )
+  where pemtxt = conduit $ yield (pemWriteBS p)
+
+
+pkcs12NodesCmd :: Args -> Segment ()
+pkcs12NodesCmd Args{..} =
+  proc "openssl" $ ["pkcs12","-in", argP12File, "-info", "-nodes"]  ++ maybe [] (\p -> ["-passin", p]) argP12Password
+
+keyFingerprintCmd :: Segment ()
+keyFingerprintCmd =
+  openssl "pkcs8" "-inform" "PEM" "-outform" "DER" "-topk8" "-nocrypt" $| openssl "sha1" "-c"
+
+showCertificateCmd :: Segment ()
+showCertificateCmd =
+  openssl "x509" "-text" "-noout"
