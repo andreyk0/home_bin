@@ -1,7 +1,16 @@
 #!/usr/bin/env stack
--- stack --silent --resolver lts-6.13 runghc --package time --package optparse-applicative
-
---  -- -Wall
+{- stack
+   --resolver lts-7.2
+   --install-ghc
+   --silent
+   runghc
+   --package base
+   --package optparse-applicative
+   --package time
+   --
+   -Wall
+   -hide-all-packages
+-}
 
 
 {-# LANGUAGE RecordWildCards  #-}
