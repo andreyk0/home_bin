@@ -5,4 +5,4 @@
 find -L "$@" -name '*.hs' -or -name '*.lhs' -not -name 'Setup.lhs' | \
   grep -v /test | \
   grep -v /Test | \
-  hasktags --ctags --ignore-close-implementation --extendedctag STDIN
+  hasktags --etags --ignore-close-implementation --extendedctag STDIN
