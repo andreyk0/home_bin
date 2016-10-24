@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+set -x
+
+EXE=$1
+
+[ -e "$EXE" ] || { echo "Usage $0 executable "; exit 1 ; }
+
+TEXE=$EXE-$(uname -s)-$(uname -m)
+
+mv -v $EXE $TEXE
+gpg --output $TEXE.gpg.sig --detach-sign $TEXE
