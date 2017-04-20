@@ -1,0 +1,54 @@
+#!/usr/bin/env stack
+{- stack
+   --resolver lts-8.11
+   --silent
+   runghc
+   --package base
+   --package bytestring
+   --package random
+   --package utf8-string
+   --
+   -Wall
+   -hide-all-packages
+-}
+
+{-# LANGUAGE OverloadedStrings    #-}
+
+
+-- Prints a portion of stdin to stdout
+module Main where
+
+import           Control.Monad
+import qualified Data.ByteString.Lazy as LB
+import qualified Data.ByteString.Lazy.UTF8 as LU8
+import           System.Environment
+import qualified System.Random as R
+
+
+main :: IO ()
+main = do
+  as <- getArgs
+
+  let usage = error "Usage: sample-lines percent"
+
+  case as
+    of p : [] -> do let p' = read p
+                    when (p' > 100 || p' < 0) usage
+                    run p'
+       _ -> usage
+
+
+run :: Double
+    -> IO ()
+run percent = do
+  txt <- LB.getContents
+  r <- R.getStdGen
+
+  foldM_ (\ r' l -> do let (i, r'') = R.randomR (0,100) r'
+
+                       when (i <= percent) $ do
+                         LB.putStr $ l
+                         LB.putStr "\n"
+
+                       return r''
+         ) r (LU8.lines txt)
