@@ -1,0 +1,3 @@
+#!/bin/bash
+# fake 'cabal' for emacs haskell layer
+exec stack"$@"
