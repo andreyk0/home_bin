@@ -1,0 +1,148 @@
+#!/usr/bin/env stack
+{- stack
+   --resolver lts-10.3
+   --silent
+   runghc
+   --package base
+   --package attoparsec
+   --package cassava
+   --package text
+   -- -Wall -Werror
+-}
+
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
+
+-- Converts output of https://github.com/wg/wrk to CSV
+
+module Main where
+
+import           Control.Applicative
+import           Data.Attoparsec.Text
+import qualified Data.ByteString.Lazy as B
+import           Data.Csv ((.=))
+import qualified Data.Csv as CSV
+import           Data.Monoid
+import qualified Data.Text.IO as TIO
+import qualified Data.Vector as Vector
+
+
+data WrkResult =
+  WrkResult { wrkConnections :: Int
+            , wrkAvgLatencyMs :: Double
+            , wrkStddevLatencyMs :: Double
+            , wrkMaxLatencyMs :: Double
+            , wrkConnectErrors :: Int
+            , wrkReadErrors :: Int
+            , wrkWriteErrors :: Int
+            , wrkTimeoutErrors :: Int
+            , wrkReqPerSec :: Double
+            } deriving (Eq, Show)
+
+
+instance CSV.ToNamedRecord WrkResult where
+  toNamedRecord WrkResult{..} =
+    CSV.namedRecord
+      [ "Connections" .= wrkConnections
+      , "AvgLatencyMs" .= wrkAvgLatencyMs
+      , "StddevLatencyMs" .= wrkStddevLatencyMs
+      , "MaxLatencyMs" .= wrkMaxLatencyMs
+      , "ConnectErrors" .= wrkConnectErrors
+      , "ReadErrors" .= wrkReadErrors
+      , "WriteErrors" .= wrkWriteErrors
+      , "TimeoutErrors" .= wrkTimeoutErrors
+      , "ReqPerSec" .= wrkReqPerSec
+      ]
+
+
+main :: IO ()
+main = do
+  txt <- TIO.getContents
+  let pRes = parseOnly (many1' parseSection) txt
+  wrkResults <- case pRes
+                of Left e -> error e
+                   Right r -> return r
+  let csvHeader = Vector.fromList
+        [ "Connections"
+        , "AvgLatencyMs"
+        , "StddevLatencyMs"
+        , "MaxLatencyMs"
+        , "ConnectErrors"
+        , "ReadErrors"
+        , "WriteErrors"
+        , "TimeoutErrors"
+        , "ReqPerSec"
+        ]
+  let csvRes = CSV.encodeByName csvHeader wrkResults
+  B.putStr csvRes
+
+
+{-
+Running 1m test @ http://....
+  2 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    41.86ms   99.66ms   1.16s    96.26%
+    Req/Sec    58.73     28.88   141.00     65.63%
+  6877 requests in 1.00m, 5.81MB read
+  Socket errors: connect 0, read 0, write 0, timeout 2227
+Requests/sec:    114.58
+Transfer/sec:     99.14KB
+--}
+parseSection :: Parser WrkResult
+parseSection = do
+  _ <- manyTill anyChar (try $ string "Running") <?> "running1"
+  _ <- manyTill anyChar endOfLine <?> "running2"
+  _ <- (skipSpace *> decimal <* string " threads and ") <?> "threads" :: Parser Integer
+
+  conn <- (decimal <* string " connections" <* skipSpace) <?> "connections"
+
+  _ <- manyTill anyChar (try $ string "Latency") <?> "latency"
+
+  avgLatency <- (skipSpace *> double) <?> "avg latency"
+  avgLatencyMultiplier <- parseTimeUnitMsMultiplier <?> "avg latency unit"
+
+  stddevLatency <- (skipSpace *> double) <?> "stddev latency"
+  stddevLatencyMultiplier <- parseTimeUnitMsMultiplier <?> "stddev latency unit"
+
+  maxLatency <- (skipSpace *> double) <?> "max latency"
+  maxLatencyMultiplier <- parseTimeUnitMsMultiplier <?> "max latency unit"
+
+  _ <- manyTill anyChar (string "requests in") <?> "skip1"
+  _ <- manyTill anyChar (string "read") <?> "skip2"
+  _ <- skipSpace
+
+  (connectErrs, readErrs, writeErrs, timeoutErrs) <- try parseSocketErrors <|> return (0,0,0,0)
+
+  _ <- manyTill anyChar (try $ string "Requests/sec:") <?> "req/sec"
+
+  reqPerSec <- (skipSpace *> double) <?> "req/sec count"
+
+  return $ WrkResult conn
+    (avgLatency * avgLatencyMultiplier)
+    (stddevLatency * stddevLatencyMultiplier)
+    (maxLatency * maxLatencyMultiplier)
+    connectErrs
+    readErrs
+    writeErrs
+    timeoutErrs
+    reqPerSec
+
+
+parseSocketErrors :: Parser (Int, Int, Int, Int)
+parseSocketErrors = do
+  _ <- string "Socket errors:" <?> "sock errors"
+  connectErrs <- (skipSpace *> string "connect " *> decimal) <?> "sock connect errs"
+  readErrs <- (string ", read " *> decimal) <?> "sock read errs"
+  writeErrs <- (string ", write " *> decimal) <?> "sock write errs"
+  timeoutErrs <- (string ", timeout " *> decimal) <?> "sock timeout errs"
+
+  return (connectErrs, readErrs, writeErrs, timeoutErrs)
+
+
+parseTimeUnitMsMultiplier :: Parser Double
+parseTimeUnitMsMultiplier = do
+  x <- ((string "ms") <|> (string "s")) <?> "time unit"
+  case x
+    of "ms" -> return 1
+       "s"  -> return 1000
+       what    -> fail $ "Unable to parse time unit [" <> show what <> "]"
