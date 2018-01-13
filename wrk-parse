@@ -2,12 +2,15 @@
 {- stack
    --resolver lts-10.3
    --silent
-   runghc
+   script
    --package base
    --package attoparsec
+   --package bytestring
    --package cassava
    --package text
-   -- -Wall -Werror
+   --package vector
+   --ghc-options -Wall
+   --ghc-options -Werror
 -}
 
 {-# LANGUAGE OverloadedStrings #-}
@@ -141,8 +144,9 @@ parseSocketErrors = do
 
 parseTimeUnitMsMultiplier :: Parser Double
 parseTimeUnitMsMultiplier = do
-  x <- ((string "ms") <|> (string "s")) <?> "time unit"
+  x <- ((string "us") <|> (string "ms") <|> (string "s")) <?> "time unit"
   case x
     of "ms" -> return 1
+       "us" -> return 0.001
        "s"  -> return 1000
        what    -> fail $ "Unable to parse time unit [" <> show what <> "]"
