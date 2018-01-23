@@ -1,0 +1,20 @@
+#!/usr/bin/env stack
+{- stack
+   --resolver lts-10.3
+   --silent
+   script
+   --package base
+   --ghc-options -Wall
+   --ghc-options -Werror
+-}
+
+module Main where
+
+main :: IO ()
+main = do
+  c <- getContents
+  case reads c
+    of []             -> putStrLn $ read $ "\"" ++ c ++ "\"" -- try again with surrounding quotes
+       [(x,leftover)] -> do putStrLn x
+                            putStrLn leftover
+       ugh            -> print ugh
