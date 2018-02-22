@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 XR=-r
 if [ $(uname -s) == "Darwin" ] ; then
