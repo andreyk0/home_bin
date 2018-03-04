@@ -2,5 +2,5 @@
 if [[ `uname -s` == 'Darwin' ]] ; then
   exec /usr/bin/pbcopy "$@"
 else
-  exec xsel --clipboard --input "$@"
+  exec xclip -selection c
 fi
