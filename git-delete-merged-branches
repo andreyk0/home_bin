@@ -1,11 +1,6 @@
 #!/bin/bash
 
-XR=-r
-if [ $(uname -s) == "Darwin" ] ; then
-  XR=
-fi
-
 git branch --list --merged origin/master | \
   egrep -v '^\*' | \
   egrep -v '^\s*master$' | \
-  xargs $XR -n 1 git branch -d
+  xargs -r -n 1 git branch -d
