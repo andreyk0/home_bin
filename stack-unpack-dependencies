@@ -9,7 +9,7 @@ PROJ=$(basename $(ls -1 *.cabal | head) .cabal)
 mkdir -pv .sources
 cd .sources
 
-for p in $(stack list-dependencies | egrep -v "^$PROJ " | sed -e 's/ /-/') ; do
+for p in $(stack ls dependencies | egrep -v "^$PROJ " | sed -e 's/ /-/') ; do
   [ -d "$SRC_ROOT/$p" ] || ( cd $SRC_ROOT && stack unpack "$p" || echo "Skipping $p" ) ;
   [ -d "$SRC_ROOT/$p" ] && ([ -e "$p" ] || ( ln -sf "$SRC_ROOT/$p" ./$p )) ;
 done
