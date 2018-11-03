@@ -1,0 +1,31 @@
+#!/usr/bin/env stack
+{- stack
+   --resolver lts-12.16
+   --silent
+   runghc
+   --package base
+   --package text
+-}
+
+
+--
+-- Trims leading and trailing white space in small text files
+--
+
+
+import           Control.Monad
+import           Data.Text (Text)
+import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
+import           System.Environment
+
+
+main:: IO ()
+main = do
+  cliArgs <- getArgs
+  when (null cliArgs) $ error "Usage: ftrim filename1 [filename2,..]"
+
+  forM_ cliArgs $ \fname -> do
+    putStrLn fname
+    fContents <- T.strip <$> TIO.readFile fname
+    TIO.writeFile fname (T.unlines [fContents])
