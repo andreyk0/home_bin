@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#
+# Converts .cabal based projects to
+#  HPACK (https://github.com/sol/hpack#readme)
+# format
+#
+exec curl -F "cabalfile=@./`echo *.cabal`" https://hpack-convert.herokuapp.com > package.yaml
