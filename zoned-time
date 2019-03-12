@@ -1,6 +1,6 @@
 #!/usr/bin/env stack
 {- stack
-   --resolver lts-7.2
+   --resolver lts-13.12
    --install-ghc
    --silent
    runghc
@@ -8,7 +8,6 @@
    --package optparse-applicative
    --package time
    --
-   -Wall
    -hide-all-packages
 -}
 
