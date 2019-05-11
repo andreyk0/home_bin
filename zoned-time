@@ -3,26 +3,23 @@
    --resolver lts-13.20
    --install-ghc
    --silent
-   runghc
+   script
    --package base
    --package optparse-applicative
    --package time
-   --
-   -hide-all-packages
 -}
 
 
-{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE RecordWildCards #-}
 
 
 import           Control.Monad
 import           Data.List
-import           Data.Monoid
 import           Data.Time
 import           Options.Applicative
 
 
-data Args = Args { argTz :: TimeZone
+data Args = Args { argTz    :: TimeZone
                  , argTimes :: [ZonedTime]
                  } deriving (Show)
 
@@ -40,24 +37,29 @@ parseArgs = Args
 
 parseTimeZoneArg :: ReadM TimeZone
 parseTimeZoneArg = eitherReader $ \tzName ->
-  let maybeTz = find (\tz -> (timeZoneName tz) == tzName) supportedZones
+  let maybeTz = find (\tz -> timeZoneName tz == tzName) supportedZones
    in case maybeTz
-        of Nothing -> Left $ "Unable to find time zone " <> tzName <> " in the list of supported zones " <> (show supportedZones)
+        of Nothing -> Left $ "Unable to find time zone " <> tzName <> " in the list of supported zones " <> show supportedZones
            Just tz -> Right tz
 
 
 parseTimeArg :: ReadM ZonedTime
 parseTimeArg = eitherReader $ \tsStr ->
-  case parseTimeM False defaultTimeLocale iso8601FmtStr tsStr
-    of Nothing -> Left $ "failed to parse " <> tsStr <> " with " <> iso8601FmtStr
+  case pTime iso8601FmtStr1 tsStr <|> pTime iso8601FmtStr2 tsStr
+    of Nothing -> Left $ "failed to parse " <> tsStr
        Just t  -> Right t
+  where
+    pTime = parseTimeM False defaultTimeLocale
 
 
 supportedZones :: [TimeZone]
-supportedZones = utc : (knownTimeZones defaultTimeLocale)
+supportedZones = utc : knownTimeZones defaultTimeLocale
 
-iso8601FmtStr:: String
-iso8601FmtStr = "%Y-%m-%dT%H:%M:%S%Z"
+iso8601FmtStr1:: String
+iso8601FmtStr1 = "%FT%T%Z"
+
+iso8601FmtStr2:: String
+iso8601FmtStr2 = "%FT%T%z"
 
 
 main:: IO ()
@@ -65,15 +67,16 @@ main = execParser opts >>= runMain
   where
     opts = info (helper <*> parseArgs)
       ( fullDesc
-     <> progDesc ("Converts given time to different time zone. Supported time zones: " <> (show supportedZones))
+     <> progDesc ("Converts given time to different time zone. Supported time zones: " <> show supportedZones)
      <> header "Converts given time to different time zone." )
 
 
 
-runMain :: Args
-        -> IO ()
+runMain
+  :: Args
+  -> IO ()
 runMain Args{..} = do
   zonedNow <-getZonedTime
   forM_ (if null argTimes then [zonedNow] else argTimes) $ \zt -> do
     let zt' = utcToZonedTime argTz $ zonedTimeToUTC zt
-    putStrLn $ formatTime defaultTimeLocale iso8601FmtStr zt'
+    putStrLn $ formatTime defaultTimeLocale iso8601FmtStr2 zt'
