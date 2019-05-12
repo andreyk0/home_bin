@@ -45,7 +45,10 @@ parseTimeZoneArg = eitherReader $ \tzName ->
 
 parseTimeArg :: ReadM ZonedTime
 parseTimeArg = eitherReader $ \tsStr ->
-  case pTime iso8601FmtStr1 tsStr <|> pTime iso8601FmtStr2 tsStr
+  case pTime iso8601FmtStr1 tsStr <|>
+       pTime iso8601FmtStr2 tsStr <|>
+       pTime inputFmtStr1 tsStr <|>
+       pTime inputFmtStr2 tsStr
     of Nothing -> Left $ "failed to parse " <> tsStr
        Just t  -> Right t
   where
@@ -60,6 +63,12 @@ iso8601FmtStr1 = "%FT%T%Z"
 
 iso8601FmtStr2:: String
 iso8601FmtStr2 = "%FT%T%z"
+
+inputFmtStr1:: String
+inputFmtStr1 = "%F %T %Z"
+
+inputFmtStr2:: String
+inputFmtStr2 = "%a %e %b %Y %T %P %Z"
 
 
 main:: IO ()
