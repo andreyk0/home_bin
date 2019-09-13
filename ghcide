@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -x
+
+# stack build ghcid --copy-compiler-tool
+exec stack exec ghcide -- "$@"
