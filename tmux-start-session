@@ -1,11 +1,12 @@
 #!/bin/bash
 
-tmux new-session -d -n SYS -s '000' -x - -y - 'journalctl -f' \; \
-     split-window -b -t 0 -v -l 8 'iostat -x 3 /dev/sda' \; \
-     split-window -b -t 1 -v -l 20 'top' \; \
-     new-window -c "$HOME/Downloads" -n Downloads \; \
-     new-window -c "$HOME/a" -n a \; \
-     new-session -d -n ssh -s SSH -x - -y - \; \
-     new-session -c "$HOME/work" -d -n work -s Work -x - -y - \; \
+tmux new-session -d -n SYS -s 000 -x - -y - 'journalctl -f' \; \
+       split-window -b -t 0 -v -l 8 'iostat -x 3 /dev/sda' \; \
+       split-window -b -t 1 -v -l 20 'top' \; \
+     new-session -d -n Home -s Home                   -x - -y - \; \
+       new-window -t Home: -c "$HOME/Downloads" -n Downloads \; \
+       new-window -t Home: -c "$HOME/a" -n a \; \
+     new-session -d -n ssh  -s SSH                    -x - -y - \; \
+     new-session -d -n Work -s Work -c "$HOME/work"   -x - -y - \; \
 
 tmux attach
