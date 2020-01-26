@@ -1,0 +1,14 @@
+#!/bin/bash
+
+[ "$(id -u)" == "0" ] || { echo "You must be root" ; exit 1; }
+
+set -e
+
+freshclam
+
+clamscan --recursive --infected \
+  /etc \
+  /home \
+  /opt \
+  /root \
+  /usr
