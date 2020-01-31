@@ -1,0 +1,2 @@
+#!/sbin/fish
+exec nice -n 10 /sbin/fish $argv
