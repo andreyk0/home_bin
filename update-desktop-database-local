@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec update-desktop-database $HOME/.local/share/applications
