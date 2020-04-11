@@ -1,0 +1,2 @@
+#!/sbin/zsh
+exec nice -n 10 /sbin/zsh $argv
