@@ -1,11 +1,11 @@
 #!/bin/bash
 
-tmux new-session -d -n Log -s '>SYS' -x - -y - 'journalctl -f' \; \
-       new-window -t '>SYS' -n Top 'gotop --percpu --rate=0.25' \; \
-     new-session -d -n Home -s Home                   -x - -y - \; \
+tmux new-session -d -n Home -s Home -x - -y - \; \
        new-window -t Home: -c "$HOME/Downloads" -n Downloads \; \
        new-window -t Home: -c "$HOME/a" -n a \; \
-     new-session -d -n ssh  -s SSH                    -x - -y - \; \
-     new-session -d -n Work -s Work -c "$HOME/work"   -x - -y - \; \
+     new-session -d -n ssh  -s SSH -x - -y - \; \
+     new-session -d -n Work -s Work -c "$HOME/work" -x - -y - \; \
+     new-session -d -n SYS -s '>SYS' -x - -y - 'gotop --percpu --rate=0.25' \; \
 
+tmux split-window -t SYS -v -l 10 'journalctl -f'
 tmux attach
