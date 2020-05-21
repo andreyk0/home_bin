@@ -7,5 +7,5 @@ tmux new-session -d -n Home -s Home -x - -y - \; \
      new-session -d -n Work -s Work -c "$HOME/work" -x - -y - \; \
      new-session -d -n SYS -s '>SYS' -x - -y - 'htop --delay=30' \; \
 
-tmux split-window -t SYS -v -l 10 'journalctl -f'
+tmux split-window -t SYS -v -l 30 'journalctl -f'
 tmux attach

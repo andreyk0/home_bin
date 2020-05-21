@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Used by emacs' haskell layer
+#
+
+
+if [ -z "$NIX_STORE" ] ; then
+  USE_NIX=
+else
+  USE_NIX=--nix
+fi
+
+exec nice -n 20 \
+  stack $USE_NIX exec ghc -- \
+  -Wall \
+  -ferror-spans \
+  -fforce-recomp \
+  -c "$@"
