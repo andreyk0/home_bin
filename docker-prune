@@ -1,0 +1,9 @@
+#!/bin/bash
+
+docker container prune
+docker image prune -a
+docker volume prune
+
+docker container ls
+docker image ls
+docker volume ls
