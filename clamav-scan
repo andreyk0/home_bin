@@ -7,8 +7,11 @@ set -e
 freshclam
 
 nice -n 20 clamscan --recursive --infected \
+  /boot \
   /etc \
   /home \
+  /nix \
   /opt \
   /root \
-  /usr
+  /usr \
+  /var
