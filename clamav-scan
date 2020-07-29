@@ -6,7 +6,7 @@ set -e
 
 freshclam
 
-clamscan --recursive --infected \
+nice -n 20 clamscan --recursive --infected \
   /etc \
   /home \
   /opt \
