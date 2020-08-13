@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#
+# Flip cargo srcs into R/O mode to prevent accidental changes
+# when jumping to src files.
+#
+
+set -e
+set -x
+
+cd $HOME/.cargo/registry/src
+
+find . -type f -print0 | xargs -0 chmod gou-w
