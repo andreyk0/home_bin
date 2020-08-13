@@ -1,3 +1,9 @@
 #!/bin/sh
 
-nix-channel --update; nix-env -iA nixpkgs.nix
+# https://www.mankier.com/1/nix-env
+
+set -e
+set -x
+
+nix-channel --update
+nix-env -u
