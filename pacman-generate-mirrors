@@ -4,3 +4,5 @@
 curl -L -s 'https://www.archlinux.org/mirrorlist/?country=AU&country=CA&country=FR&country=IS&country=GB&country=US&protocol=https&use_mirror_status=on' | \
     sed -e 's/^#Server/Server/' -e '/^#/d' | \
     rankmirrors -n 5 -
+
+echo "## Run ### pacman -Syyu"
