@@ -3,9 +3,7 @@
 tmux new-session -d -n Home -s Home -x - -y - \; \
        new-window -t Home: -c "$HOME/Downloads" -n Downloads \; \
        new-window -t Home: -c "$HOME/a" -n a \; \
-     new-session -d -n ssh  -s SSH -x - -y - \; \
      new-session -d -n Work -s Work -c "$HOME/work" -x - -y - \; \
-     new-session -d -n SYS -s '>SYS' -x - -y - 'atop' \; \
 
-tmux split-window -t SYS -v -l 10 'journalctl -f'
+
 tmux attach
