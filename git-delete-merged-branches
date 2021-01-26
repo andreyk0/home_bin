@@ -5,7 +5,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
   X=
 fi
 
-git branch --list --merged origin/master | \
+git branch --list --merged origin/$(git-default-branch) | \
   egrep -v '^\*' | \
   egrep -v '^\s*master$' | \
   xargs $X -n 1 git branch -d
