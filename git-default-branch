@@ -1,0 +1,4 @@
+#!/bin/sh
+# Prints name of the default git branch (from origin)
+set -e
+git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
