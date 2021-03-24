@@ -1,0 +1,9 @@
+#!/bin/sh
+# Run command in a project root
+
+set -e
+
+R=$(project-root)
+
+cd "$R"
+exec "$@"
