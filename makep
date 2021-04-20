@@ -1,0 +1,2 @@
+#!/bin/sh
+exec in-project-root make "$@"
