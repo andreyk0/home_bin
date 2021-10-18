@@ -1,12 +1,8 @@
-#!/usr/bin/env stack
-{- stack
-   --resolver lts-15.12
-   --silent
-   script
-   --package base
-   --ghc-options -Wall
-   --ghc-options -Werror
--}
+#! /usr/bin/env nix-shell
+#! nix-shell --quiet
+#! nix-shell <nixpkgs>
+#! nix-shell -i runghc
+#! nix-shell -p "ghc.withPackages (x: [ x.base ])"
 
 module Main where
 
