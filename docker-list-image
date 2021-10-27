@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+IMG="$1"
+
+[ -z "$IMG" ] && { echo "Usage: $0 docker-image" ; exit 1; }
+
+docker save "$IMG" | tar --to-stdout --wildcards --extract '*/layer.tar' | tar --list --verbose
