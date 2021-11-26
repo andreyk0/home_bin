@@ -1,0 +1,16 @@
+#!/bin/bash
+# Preview files in a terminal window
+#
+# e.g. fzf --bind 'ctrl-v:preview(preview {})' --preview-window hidden | xargs xdg-open
+
+set -x
+set -e
+
+F="$1"
+
+case $(file --brief --mime-type "$F") in
+    "application/pdf")
+        exec pdftotext -f 1 -l 1 "$F" - ;;
+    *)
+        exec bat "$F" ;;
+esac
