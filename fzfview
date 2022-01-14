@@ -1,0 +1,2 @@
+#!/bin/bash
+exec fzf --bind "enter:execute(bat --color=always {})" --preview='bat --color=always {}'
