@@ -1,2 +1,3 @@
 #!/bin/bash
+export FZF_DEFAULT_COMMAND='fd --type f'
 exec fzf --bind "enter:execute(bat --color=always {})" --preview='bat --color=always {}'
