@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -vf "$HOME"/.emacs.d/.local/cache/saveplace
+rm -vf "$HOME"/.emacs.d/.local/etc/workspaces/autosave*
