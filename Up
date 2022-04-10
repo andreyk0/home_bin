@@ -1,0 +1,13 @@
+#!/bin/bash
+
+sudo pacman -Syu
+sudo pacman -Sc
+
+nix-update
+
+rustup update
+cargo install-update -a
+
+doom upgrade
+doom sync
+doom doctor
