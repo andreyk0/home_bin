@@ -1,7 +1,7 @@
 #!/bin/bash
 
-sudo pacman -Syu
-sudo pacman -Sc
+sudo pacman -Syu --noconfirm
+sudo pacman -Sc --noconfirm
 
 nix-update
 
@@ -10,4 +10,5 @@ cargo install-update -a
 
 doom upgrade
 doom sync
+doom purge -g
 doom doctor
