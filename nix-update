@@ -6,4 +6,5 @@ set -e
 set -x
 
 nix-channel --update
-nix-env -u
+#nix-env -u
+env NIX_PATH="REPEAT=/dev/null" nix-env --upgrade
