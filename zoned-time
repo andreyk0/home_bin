@@ -1,6 +1,6 @@
 #!/usr/bin/env stack
 {- stack
-   --resolver lts-14.17
+   --resolver lts-19.6
    --install-ghc
    --silent
    script
