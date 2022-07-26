@@ -1,9 +1,0 @@
-#!/bin/bash
-
-tmux new-session -d -n Home -s Home -x - -y - \; \
-       new-window -t Home: -c "$HOME/Downloads" -n Downloads \; \
-       new-window -t Home: -c "$HOME/a" -n a \; \
-     new-session -d -n Work -s Work -c "$HOME/work" -x - -y - \; \
-
-
-tmux attach

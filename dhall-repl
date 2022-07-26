@@ -1,3 +1,0 @@
-#!/bin/sh
-# emacs's dhall-mode is looking for it
-exec dhall repl "$@"
