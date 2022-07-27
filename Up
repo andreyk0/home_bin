@@ -9,6 +9,6 @@ rustup update
 cargo install-update -a
 
 doom upgrade
-doom sync
+doom sync -e
 doom purge -g
 doom doctor
