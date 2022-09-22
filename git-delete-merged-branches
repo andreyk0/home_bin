@@ -8,6 +8,6 @@ fi
 DEF_BRANCH=$(git-default-branch)
 
 git branch --list --merged "origin/$DEF_BRANCH" | \
-  egrep -v '^\*' | \
-  egrep -v '^\s*'"$DEF_BRANCH"'$' | \
+  grep -E -v '^\*' | \
+  grep -E -v '^\s*'"$DEF_BRANCH"'$' | \
   xargs $X -n 1 git branch -d
