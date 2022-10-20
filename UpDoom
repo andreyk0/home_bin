@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+set -x
+
+doom upgrade
+doom sync -e
+doom purge -g
+cp -av $HOME/.dotfiles/doom.d/myenv.bak $HOME/.dotfiles/doom.d/myenv
+doom doctor
