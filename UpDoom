@@ -3,6 +3,7 @@
 set -e
 set -x
 
+pkill emacs
 doom upgrade
 doom sync -e
 doom purge -g
