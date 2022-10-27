@@ -1,9 +1,11 @@
 #!/bin/bash
 
-set -e
 set -x
 
 pkill emacs
+
+set -e
+
 doom upgrade
 doom sync -e
 doom purge -g
