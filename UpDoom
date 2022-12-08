@@ -2,6 +2,7 @@
 
 set -x
 
+systemctl --user stop emacs
 pkill emacs
 
 set -e
@@ -11,3 +12,5 @@ doom sync -e
 doom purge -g
 cp -av $HOME/.dotfiles/doom.d/myenv.bak $HOME/.dotfiles/doom.d/myenv
 doom doctor
+
+systemctl --user restart emacs
