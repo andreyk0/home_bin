@@ -13,4 +13,4 @@ doom purge -g
 cp -av $HOME/.dotfiles/doom.d/myenv.bak $HOME/.dotfiles/doom.d/myenv
 doom doctor
 
-systemctl --user restart emacs
+#systemctl --user restart emacs
