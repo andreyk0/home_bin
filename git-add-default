@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ -z "$1" ] ; then
-    git add --verbose . ;
-else
-    git add --verbose "$@" ;
-fi
