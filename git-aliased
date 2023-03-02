@@ -1,0 +1,4 @@
+#!/bin/sh
+# https://stackoverflow.com/questions/26243145/git-aliases-operate-in-the-wrong-directory
+[ "$GIT_PREFIX" != "" ] && cd -- "$GIT_PREFIX"
+exec git "$@"
