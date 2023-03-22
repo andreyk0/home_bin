@@ -1,9 +1,13 @@
 #!/bin/bash
 
-docker container prune
-docker image prune -a
-docker volume prune
+[ "$(id -u)" == "0" ] || { echo "You must be root" ; exit 1; }
 
-docker container ls
+set -e
+set -x
+
+systemctl stop docker.service
+
+rm -rf /var/lib/docker
+btrfs subvol create /var/lib/docker
+
 docker image ls
-docker volume ls
