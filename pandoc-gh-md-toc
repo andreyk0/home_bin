@@ -1,0 +1,2 @@
+#!/bin/bash
+exec pandoc -s --to gfm --toc "$@"
