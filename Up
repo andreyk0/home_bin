@@ -9,3 +9,6 @@ rustup update
 cargo install-update -a
 
 UpDoom
+
+sudo fstrim --verbose --all
+sudo btrfs filesystem defragment -r /
