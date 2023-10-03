@@ -10,5 +10,6 @@ cargo install-update -a
 
 UpDoom
 
-sudo fstrim --verbose --all
 sudo btrfs filesystem defragment -r /
+sudo btrfs filesystem defragment -r /nix
+sudo fstrim --verbose --all
