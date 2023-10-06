@@ -1,0 +1,2 @@
+#!/bin/sh
+exec sql-formatter --config "$HOME/.dotfiles/sql-formatter.json" "$@"
