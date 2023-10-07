@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 sudo pacman -Syu --noconfirm
 sudo pacman -Sc --noconfirm
 
@@ -10,6 +12,11 @@ cargo install-update -a
 
 UpDoom
 
-sudo btrfs filesystem defragment -r /
-sudo btrfs filesystem defragment -r /nix
+nix-store --optimize
+
+sudo btrfs filesystem defragment -r -czstd /
+sudo btrfs filesystem defragment -r        /home
+sudo btrfs filesystem defragment -r -czstd /nix
+sudo btrfs filesystem defragment -r        /var
+
 sudo fstrim --verbose --all
