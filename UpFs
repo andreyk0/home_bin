@@ -4,10 +4,17 @@ set -x
 
 [ "$(id -u)" == "0" ] || { echo "You must be root" ; exit 1; }
 
+function dfr() {
+    btrfs filesystem defragment -r "$@"
+}
 
-btrfs filesystem defragment -r -czstd /
-btrfs filesystem defragment -r        /home
-btrfs filesystem defragment -r -czstd /nix
-btrfs filesystem defragment -r        /var
+dfr -czstd /
+dfr        /home
+dfr -czstd /nix
+dfr        /var
+
+for d in $(btrfs subvolume list / | grep -E 'path (home|var)/' | sed -e 's/^.* path //') ; do
+    dfr "$d"
+done
 
 fstrim --verbose --all
