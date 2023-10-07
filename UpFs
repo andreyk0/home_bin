@@ -14,7 +14,7 @@ dfr -czstd /nix
 dfr        /var
 
 for d in $(btrfs subvolume list / | grep -E 'path (home|var)/' | sed -e 's/^.* path //') ; do
-    dfr "$d"
+    dfr "/$d"
 done
 
 fstrim --verbose --all
