@@ -5,18 +5,10 @@ set -x
 sudo pacman -Syu --noconfirm
 sudo pacman -Sc --noconfirm
 
-nix-update
-
 rustup update
 cargo install-update -a
 
 UpDoom
+UpNix
 
-nix-store --optimize
-
-sudo btrfs filesystem defragment -r -czstd /
-sudo btrfs filesystem defragment -r        /home
-sudo btrfs filesystem defragment -r -czstd /nix
-sudo btrfs filesystem defragment -r        /var
-
-sudo fstrim --verbose --all
+sudo UpFs

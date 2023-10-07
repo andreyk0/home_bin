@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -x
+
+[ "$(id -u)" == "0" ] || { echo "You must be root" ; exit 1; }
+
+
+btrfs filesystem defragment -r -czstd /
+btrfs filesystem defragment -r        /home
+btrfs filesystem defragment -r -czstd /nix
+btrfs filesystem defragment -r        /var
+
+fstrim --verbose --all

@@ -8,3 +8,5 @@ set -x
 nix-channel --update
 #env NIX_PATH="REPEAT=/dev/null" nix-env --upgrade
 nix-env --upgrade
+
+nix-store --optimize
