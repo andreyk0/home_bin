@@ -6,9 +6,9 @@ sudo pacman -Syu --noconfirm
 sudo pacman -Sc --noconfirm
 
 rustup update
-cargo install-update -a
+#cargo install-update -a
 
 UpDoom
-UpNix
+#UpNix
 
 sudo UpFs
