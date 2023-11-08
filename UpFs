@@ -8,10 +8,9 @@ function dfr() {
     btrfs filesystem defragment -r "$@"
 }
 
-dfr -czstd /
-dfr        /home
-dfr -czstd /nix
-dfr        /var
+dfr /
+dfr /home
+dfr /var
 
 for d in $(btrfs subvolume list / | grep -E 'path (home|var)/' | sed -e 's/^.* path //') ; do
     dfr "/$d"
