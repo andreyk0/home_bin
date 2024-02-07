@@ -2,5 +2,5 @@
 if [[ `uname -s` == 'Darwin' ]] ; then
   exec /usr/bin/pbpaste "$@"
 else
-  exec xclip -selection c -out
+  exec wl-paste "$@"
 fi

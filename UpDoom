@@ -10,7 +10,6 @@ set -e
 doom upgrade
 doom sync -e
 doom purge -g
-cp -av $HOME/.dotfiles/config/doom/myenv.bak $HOME/.dotfiles/config/doom/myenv
 doom doctor --pager=cat
 
 #systemctl --user restart emacs
