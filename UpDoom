@@ -12,4 +12,4 @@ doom sync -e
 doom purge -g
 doom doctor --pager=cat
 
-#systemctl --user restart emacs
+systemctl --user restart emacs
