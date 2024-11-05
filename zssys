@@ -1,2 +1,2 @@
 #!/bin/sh
-exec nice -n 20 zellij -s sys --layout=sys
+exec nice -n 20 zellij -s sys -n sys
