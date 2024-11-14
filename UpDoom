@@ -9,7 +9,7 @@ set -e
 
 doom upgrade
 doom sync -e
-doom purge -g
+doom gc -g
 doom doctor --pager=cat
 
 systemctl --user restart emacs
