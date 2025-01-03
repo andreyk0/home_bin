@@ -2,7 +2,7 @@
 
 threshold=$(date -d "2 years ago" +%s)
 
-all_branches=$(git branch --list --remote)
+all_branches=$(git branch --list --remote | grep -v origin/HEAD)
 
 for branch in $all_branches; do
   last_commit_timestamp=$(git log -n 1 --format="%at" $branch)
