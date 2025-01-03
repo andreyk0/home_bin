@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 threshold=$(date -d "2 years ago" +%s)
 
 all_branches=$(git branch --list --remote | grep -v origin/HEAD)
