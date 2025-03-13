@@ -1,9 +1,19 @@
 #!/bin/sh
 
+language_flag_present=0
+
+for arg in "$@"; do
+    case "$arg" in
+        -l|--language)
+            language_flag_present=1
+            break
+            ;;
+    esac
+done
+
 # bigquery,db2,db2i,hive,mariadb,mysql,n1ql,plsql,postgresql,redshift,spark,sqlite,sql,tidb,trino,transactsql,tsql,singlestoredb,snowflake
-if [ -z "$SQLLANG" ] ; then
-    #SQLLANG=bigquery
-    SQLLANG=postgresql
+if [ "$language_flag_present" -eq 0 ]; then
+    set -- "--language" "bigquery" "$@"
 fi
 
-exec npx --prefer-offline -- sql-formatter -l "$SQLLANG" "$@"
+exec npx --prefer-offline -- sql-formatter "$@"
