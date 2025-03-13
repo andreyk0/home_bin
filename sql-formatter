@@ -1,6 +1,9 @@
 #!/bin/sh
 
 # bigquery,db2,db2i,hive,mariadb,mysql,n1ql,plsql,postgresql,redshift,spark,sqlite,sql,tidb,trino,transactsql,tsql,singlestoredb,snowflake
-LANG=bigquery
+if [ -z "$SQLLANG" ] ; then
+    #SQLLANG=bigquery
+    SQLLANG=postgresql
+fi
 
-exec npx --prefer-offline -- sql-formatter -l "$LANG" "$@"
+exec npx --prefer-offline -- sql-formatter -l "$SQLLANG" "$@"
