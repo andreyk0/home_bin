@@ -1,0 +1,2 @@
+#!/bin/sh
+exec pg_dump --schema-only --no-comments --no-owner --no-privileges --no-tablespaces -t "$@"
