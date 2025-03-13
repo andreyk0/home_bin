@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# bigquery,db2,db2i,hive,mariadb,mysql,n1ql,plsql,postgresql,redshift,spark,sqlite,sql,tidb,trino,transactsql,tsql,singlestoredb,snowflake
+LANG=bigquery
+
+exec npx --prefer-offline -- sql-formatter -l "$LANG" "$@"
