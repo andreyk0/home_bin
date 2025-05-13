@@ -1,5 +1,14 @@
 #!/bin/bash
-#
-# https://www.gnu.org/software/emacs/manual/html_node/efaq/Colors-on-a-TTY.html
-#
-exec emacsclient --alternate-editor= -nw "$@"
+set -e
+
+base_args=("--alternate-editor=" "-nw" "--tty")
+
+if [ $# -eq 0 ]; then
+  # --- Pager Mode: Capture STDIN to a temporary file ---
+  temp_file=$(mktemp)
+  trap 'rm -f "$temp_file"' EXIT INT TERM HUP
+  cat > "$temp_file"
+  emacsclient "${base_args[@]}" "$temp_file"
+else
+  exec emacsclient "${base_args[@]}" "$@"
+fi
