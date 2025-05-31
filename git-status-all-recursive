@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# Git status of all dirs
+#
+
+find . -type d -name ".git" | while read git_dir; do
+    repo_dir=$(dirname "$git_dir")
+
+    echo "----------------------------------------"
+    echo "Checking Git status in: $repo_dir"
+    echo "----------------------------------------"
+
+    (cd "$repo_dir" && git status)
+    echo ""
+done
