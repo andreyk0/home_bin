@@ -1,0 +1,2 @@
+#!/bin/sh
+exec npx --prefer-offline -- https://github.com/google-gemini/gemini-cli "$@"
