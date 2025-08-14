@@ -3,7 +3,7 @@ set -e
 
 base_args=("--alternate-editor=" "-nw" "--tty")
 
-if [ $# -eq 0 ]; then
+if [ $# -eq 0 ] && ! [ -t 0 ]; then
   # --- Pager Mode: Capture STDIN to a temporary file ---
   temp_file=$(mktemp)
   trap 'rm -f "$temp_file"' EXIT INT TERM HUP
