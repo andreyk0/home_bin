@@ -1,2 +1,3 @@
 #!/bin/sh
-exec npx --prefer-offline -- 'https://github.com/google-gemini/gemini-cli#0c0309abdccc0980434cba26051079072a58caea' "$@"
+#exec npx -- 'https://github.com/google-gemini/gemini-cli#0c0309abdccc0980434cba26051079072a58caea' "$@"
+exec npx -- '@google/gemini-cli@preview' "$@"
