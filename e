@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-base_args=("--alternate-editor=" "-nw" "--tty")
+base_args=("--alternate-editor=" "-nw" "--tty" "--create-frame")
 
 if [ $# -eq 0 ] && ! [ -t 0 ]; then
   # --- Pager Mode: Capture STDIN to a temporary file ---

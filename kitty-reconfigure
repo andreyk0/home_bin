@@ -1,0 +1,3 @@
+#!/bin/sh
+# Force kitty to re-read conf file
+exec killall -SIGUSR1 kitty
